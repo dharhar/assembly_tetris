@@ -4,10 +4,10 @@
 # Student 1: Name, Student Number
 # Student 2: Name, Student Number (if applicable)
 ######################## Bitmap Display Configuration ########################
-# - Unit width in pixels:       TODO
-# - Unit height in pixels:      TODO
-# - Display width in pixels:    TODO
-# - Display height in pixels:   TODO
+# - Unit width in pixels:       8
+# - Unit height in pixels:      8
+# - Display width in pixels:    256
+# - Display height in pixels:   256
 # - Base Address for Display:   0x10008000 ($gp)
 ##############################################################################
 
@@ -62,32 +62,32 @@ main:
 init_board:                             # draw a grid across the entire screen
         beq $t9, 4096, draw_border      # once the entire grid is drawn, jump to drawing the playing box
         
-        div $t9, $t8
-        mfhi $t7
+        div $t9, $t8                    # divide the current pixel we're at (t9 goes from the top left to the bottom left and increments by 256) by 128
+        mfhi $t7                        # get the remainder of the result
         
-        li $t3, 0
+        li $t3, 0                       # increment this by 4 to draw the actual rows in the helper functions, resets to 0 everytime a row is drawn
         
-        beq $t7, 0, draw_even_row
-        beq $t7, 128, draw_odd_row
+        beq $t7, 0, draw_even_row       # if the remainder is 0, then we're at even rows (row 0, 2, 4, ...)
+        beq $t7, 128, draw_odd_row      # if the remainder is 128, then we're at odd rows (row 1, 3, 5, ...)
         
         j exit
         
 end_init_board:
         
     draw_even_row:                          # starts with gray two
-        sw $t2, 0($t5)
-        addi $t5, $t5, 4
-        sw $t1, 0($t5)
+        sw $t2, 0($t5)                      # draw gray two in the first box
+        addi $t5, $t5, 4                     
+        sw $t1, 0($t5)                      # draw gray one in the second box
         addi $t5, $t5, 4
         
         addi $t3, $t3, 4
-        addi $t9, $t9, 8
-        beq $t3, 64 init_board
+        addi $t9, $t9, 8                    # increment the total amount of boxes drawn in the grid
+        beq $t3, 64 init_board              # once it reaches the end of the row, go back and see 
         
         j draw_even_row
         
     draw_odd_row:                           # starts with gray one  
-        sw $t1, 0($t5)
+        sw $t1, 0($t5)                      # same as above with the colors switched
         addi $t5, $t5, 4
         sw $t2, 0($t5)
         addi $t5, $t5, 4
@@ -101,14 +101,14 @@ end_init_board:
 
 draw_border:
     
-    li $t1, 0xa6a6a6     
-    sw $t1, 776($t0)
+    li $t1, 0xa6a6a6                # color of the border
+    sw $t1, 776($t0)                # start drawing the border at this pixel
     
     addi $a0, $zero, 21	# height of display
     addi $a1, $zero, 11	# width of display
     add $t0, $zero, $zero
     
-    add $t2, $zero, $zero
+    add $t2, $zero, $zero           # reset values of temp registers
     add $t3, $zero, $zero
     add $t5, $zero, $zero
     add $t8, $zero, $zero
@@ -136,7 +136,7 @@ draw_border:
         addi $t0, $t0, 128          # move to next pixel (downwards)
         addi $t2, $t2, 1            # increment counter
         
-        beq $t2, $a0, up_v
+        beq $t2, $a0, up_v          # once it's done drawing the vertical section, move to the helper that draws the other vertical section
         
         mul $t8, $a0, 2
         
@@ -151,8 +151,9 @@ draw_border:
         
 cover_background: 
     li $t1, 0x000000            # use a black color for the background
+    
     init_draw_upper_sec: 
-        lw $t0, ADDR_DSPL           # go back to the top  left corner of bitmap display     
+        lw $t0, ADDR_DSPL           # go back to the topleft corner of bitmap display     
         li $t2, 0                   # incrementer variable
     
     draw_upper_sec:
@@ -164,8 +165,8 @@ cover_background:
     
     init_draw_lower_sec:
         lw $t0, ADDR_DSPL
-        addi $t0, $t0, 3456
-        li $t2, 0       
+        addi $t0, $t0, 3456                 # move to the starting byte for the next section 
+        li $t2, 0                           # reset incrementer
         
     draw_lower_sec:
         beq $t2, 160, init_draw_left_sec
@@ -200,11 +201,9 @@ cover_background:
         li $t3, 0
         addi $t0, $t0, 56
         addi $t2, $t2, 1
-        j draw_row_for_right_sec
-        
-        
+        j draw_row_for_right_sec 
     
-    draw_row_for_right_sec:
+    draw_row_for_right_sec:            # helper method to draw a row for the section to the right of the playing box
         beq $t3, 18, draw_right_sec
         sw $t1, 0($t0)
         addi $t0, $t0, 4
