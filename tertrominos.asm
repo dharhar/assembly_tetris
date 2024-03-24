@@ -39,20 +39,22 @@ I_TYPE_HORIZONTAL:
 	.globl main
 
 	# Run the Tetris game.
+lw $t0, ADDR_DSPL       # $t0 = base address for display
+    
+lw $s0, ADDR_DSPL       # $s0 = curr anchor location
+addi $s0, $s0, 200
+li $s1, 0               # $s1 = curr orientation
+li $s2, 0               # $s2 = curr shape
+
+jal i_type
+    
 main:
 
     li $v0, 32
 	li $a0, 1
-	
-	
 
 	syscall
 	
-    lw $t0, ADDR_DSPL       # $t0 = base address for display
-    
-    lw $s0, ADDR_DSPL       # $s0 = curr anchor location
-    li $s1, 0               # $s1 = curr orientation
-    li $s2, 0               # $s2 = curr shape
     
     addi $t0, $t0, 8
 
@@ -60,6 +62,7 @@ main:
     lw $t8, 0($t9)                  # Load first word from keyboard
     beq $t8, 1, keyboard_input      # If first word 1, key is pressed
     
+    beq $t8, 0, main
     
     b main
 
@@ -71,7 +74,6 @@ keyboard_input:                     # A key is pressed
     beq $a0, 0x73, respond_to_S 
     beq $a0, 0x64, respond_to_D 
             
-
     li $v0, 1                       # ask system to print $a0
     syscall
     
@@ -84,6 +86,12 @@ respond_to_Q:
 respond_to_W:
     addi $s1, $s1, 1                # increment variable that stores rotation
     addi $v0, $s1, 0                # ?
+    jal i_type
+    
+    # xor $t1, $s1, 1
+    # li $s1, 0
+    # add $s1, $s1, $t1
+    
     j main
 
 respond_to_A:
@@ -104,11 +112,27 @@ respond_to_D:
 
 i_type:
     
-    beq $s1, 0, i_vert
-    beq $s1, 1, i_horz
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    
+    jal erase_i
+    
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    
+    li $t8, 2
+    div $s1, $t8
+    mfhi $t7
+    
+    beq $t7, 0, i_vert
+    beq $t7, 1, i_horz
     
     i_vert:
-        li $t1, 0x47f5cf        # I-type: teal    
+        li $t1, 0x47f5cf        # I-type: teal  
+        
+        li $t0, 0               # set starting position as anchor
+        add $t0, $t0, $s0
+        
         sw $t1, 0($t0)
         addi $t0, $t0, 128
         sw $t1, 0($t0)
@@ -116,10 +140,14 @@ i_type:
         sw $t1, 0($t0)
         addi $t0, $t0, 128
         sw $t1, 0($t0)
-        j main
+        jr $ra
         
     i_horz:
         li $t1, 0x47f5cf        # I-type: teal    
+        
+        li $t0, 0               # set starting position as anchor
+        add $t0, $t0, $s0
+        
         sw $t1, 0($t0)
         addi $t0, $t0, 4
         sw $t1, 0($t0)
@@ -127,9 +155,45 @@ i_type:
         sw $t1, 0($t0)
         addi $t0, $t0, 4
         sw $t1, 0($t0)
-        j main
+        jr $ra
         
 erase_i:
+
+    li $t8, 2
+    div $s1, $t8
+    mfhi $t7
+    
+    beq $t7, 1, erase_i_vert
+    beq $t7, 0, erase_i_horz
+    
+    erase_i_vert:
+        li $t0, 0               # set starting position as anchor
+        add $t0, $t0, $s0
+        
+        li $t1, 0x000000        # black   
+        sw $t1, 0($t0)
+        addi $t0, $t0, 128
+        sw $t1, 0($t0)
+        addi $t0, $t0, 128
+        sw $t1, 0($t0)
+        addi $t0, $t0, 128
+        sw $t1, 0($t0)
+        jr $ra
+        
+    erase_i_horz:
+        li $t0, 0               # set starting position as anchor
+        add $t0, $t0, $s0
+        
+        li $t1, 0x000000        # black   
+        sw $t1, 0($t0)
+        addi $t0, $t0, 4
+        sw $t1, 0($t0)
+        addi $t0, $t0, 4
+        sw $t1, 0($t0)
+        addi $t0, $t0, 4
+        sw $t1, 0($t0)
+        jr $ra
+        jr $ra
     
     
 j_type:
