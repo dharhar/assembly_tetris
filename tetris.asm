@@ -265,7 +265,7 @@ respond_to_Q:
 respond_to_W:
     addi $s1, $s1, 1                # increment variable that stores rotation
     addi $v0, $s1, 0                # ?
-    j main
+    j game_loop
 
 respond_to_A:
     # ...                             # move the tetromino right
@@ -282,6 +282,10 @@ respond_to_D:
     
     j game_loop
     
+respond_to_P:
+    lw $a0, 8($t9)
+    # beq $a0, 0x70, ...                       # respont to another P press
+    # call sleep or something here
     
 keyboard_input:                     # handle key press
     lw $a0, 4($t9)                  # Load second word from keyboard
@@ -290,22 +294,24 @@ keyboard_input:                     # handle key press
     beq $a0, 0x61, respond_to_A 
     beq $a0, 0x73, respond_to_S 
     beq $a0, 0x64, respond_to_D 
+    beq $a0, 0x70, respond_to_P
             
 
     li $v0, 1                       # ask system to print $a0
     syscall
     
-    b main
+    b game_loop
 
 
 game_loop:
 	# 1a. Check if key has been pressed
+	# 1b. Check which key has been pressed
 	lw $t9, ADDR_KBRD               # load $t9 = base address for keyboard
     lw $t8, 0($t9)                  # Load first word from keyboard
 	beq $t8, 1, keyboard_input      # If first word 1, key is pressed
 	
-    # 1b. Check which key has been pressed
-    # 2a. Check for collisions
+    
+    # 2a. Check for collisions (do this in respond to ...)
 	# 2b. Update locations (paddle, ball)
 	# 3. Draw the screen
 	# 4. Sleep
