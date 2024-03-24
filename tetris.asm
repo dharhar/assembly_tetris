@@ -213,6 +213,7 @@ cover_background:
     
 end_cover_background: 
         
+# TEST
 game_loop:
 	# 1a. Check if key has been pressed
     # 1b. Check which key has been pressed
