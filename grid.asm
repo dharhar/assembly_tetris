@@ -21,13 +21,6 @@ ADDR_DSPL:
 # The address of the keyboard. Don't forget to connect it!
 ADDR_KBRD:
     .word 0xffff0000
-    
-I_TYPE_HORIZONTAL:
-    .byte 4, 4, 4    # differences of one address with the next
-    
-# I_TYPE_VERTICAL:
-    # .space 16                       # 
-
 
 ##############################################################################
 # Mutable Data
@@ -203,7 +196,7 @@ cover_background:
         # sw $t1, 0($t0)
     
     draw_right_sec:
-        beq $t2, 21, init_colors
+        beq $t2, 21, exit 
         li $t3, 0
         addi $t0, $t0, 56
         addi $t2, $t2, 1
@@ -217,93 +210,12 @@ cover_background:
         addi $t0, $t0, 4
         addi $t3, $t3, 1
         j draw_row_for_right_sec
-           
+        
+    
 end_cover_background: 
         
-
-init_colors:
-    lw $t0, ADDR_DSPL
-    li $t9, 0xffffff
-    la $s0, I_TYPE_HORIZONTAL
-    j draw_sample
-        
-draw_sample:                # test drawing an I type tile
-    lb $t1, 0($s0)          # get first offset address
-    addi $t0, $t0, 792      # go to the middle of the grid
-    sw $t9, 0($t0)          # draw first square
-    
-    add $t0, $t0, $t1       # move to next address
-    sw $t9, 0($t0)          # draw second square (first square + offset from I_TYPE_HORIZONTAL)
-    
-    lb $t1, 1($s0)
-    add $t0, $t0, $t1
-    sw $t9, 0($t0)
-    
-    lb $t1, 2($s0)
-    add $t0, $t0, $t1
-    sw $t9, 0($t0)
-    
-    j game_loop
-        
-# init_game_loop:
-    # lw $t9, ADDR_KBRD               # load $t9 = base address for keyboard
-    # lw $t8, 0($t9)                  # Load first word from keyboard
-    
-    
-    #  function call here?
-    # sw $t5, 0($t0)
-    # sw $t5, 128($t0)
-    # sw $t5, 256($t0)
-    # sw $t5, 384($t0)
-    j game_loop
-    
-
-respond_to_Q:
-	li $v0, 10                      # Quit gracefully
-	syscall
-	
-respond_to_W:
-    addi $s1, $s1, 1                # increment variable that stores rotation
-    addi $v0, $s1, 0                # ?
-    j main
-
-respond_to_A:
-    # ...                             # move the tetromino right
-    
-    j game_loop
-
-respond_to_S:
-    # ...                             # move the tetromino left
-    # addi $v0, $s1, 0
-    j game_loop
-
-respond_to_D:
-    # ...                             # move the tetromino down
-    
-    j game_loop
-    
-    
-keyboard_input:                     # handle key press
-    lw $a0, 4($t9)                  # Load second word from keyboard
-    beq $a0, 0x71, respond_to_Q     # Check if the key q was pressed
-    beq $a0, 0x77, respond_to_W
-    beq $a0, 0x61, respond_to_A 
-    beq $a0, 0x73, respond_to_S 
-    beq $a0, 0x64, respond_to_D 
-            
-
-    li $v0, 1                       # ask system to print $a0
-    syscall
-    
-    b main
-
-
 game_loop:
 	# 1a. Check if key has been pressed
-	lw $t9, ADDR_KBRD               # load $t9 = base address for keyboard
-    lw $t8, 0($t9)                  # Load first word from keyboard
-	beq $t8, 1, keyboard_input      # If first word 1, key is pressed
-	
     # 1b. Check which key has been pressed
     # 2a. Check for collisions
 	# 2b. Update locations (paddle, ball)
