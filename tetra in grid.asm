@@ -302,20 +302,104 @@ check_W:
     beq $t7, 1, check_W_horz
 
     check_W_vert:
+  
+        li $t8, 0                           # counter
+        addi $t7, $s0, 4
+        
+        ##### check not frozen #####
+        
+        lw $t9, 512($t7) 
+        
+        check_colour_1_below:
+            bne $t9, 0x383838, check_colour_2_below
+            beq $t9, 0x383838, check_pass
+            
+        check_colour_2_below:
+            bne $t9, 0x1c1c1c, game_loop
+            beq $t9, 0x1c1c1c, check_pass
+        
+        ##### check not frozen #####
+    
+        check_colour_1_W_vert:
+            lw $t9, 0($t7)                    # position
+            bne $t9, 0x383838, check_colour_2_W_vert
+            beq $t9, 0x383838, up_counters_W_vert
+            
+        check_colour_2_W_vert:
+            bne $t9, 0x1c1c1c, game_loop
+            beq $t9, 0x1c1c1c, up_counters_W_vert
+            
+        up_counters_W_vert:
+            addi, $t8, $t8, 1
+            addi $t7, $t7, 4
+            
+            beq $t8, 3, check_pass
+            
+            j check_colour_1_W_vert
         
     check_W_horz:
+        li $t8, 0                           # counter
+        addi $t7, $s0, 384
+    
+        check_colour_1_W_horz:
+            lw $t9, 0($t7)                    # position
+            bne $t9, 0x383838, check_colour_2_W_horz
+            beq $t9, 0x383838, up_counters_W_horz
+            
+        check_colour_2_W_horz:
+            bne $t9, 0x1c1c1c, game_loop
+            beq $t9, 0x1c1c1c, up_counters_W_horz
+            
+        up_counters_W_horz:
+            addi, $t8, $t8, 1
+            addi $t7, $t7, 128
+            
+            beq $t8, 4, check_pass
+            
+            j check_colour_1_W_horz
+        
     
 check_A:
-    lw $t9, -4($s0)
+
+    li $t8, 2
+    div $s1, $t8
+    mfhi $t7
     
-    check_colour_1_A:
-        bne $t9, 0x383838, check_colour_2_A
-        beq $t9, 0x383838, check_pass
-    check_colour_2_A:
-        bne $t9, 0x1c1c1c, game_loop
-        beq $t9, 0x1c1c1c, check_pass
-   check_pass:
-        jr $ra
+    beq $t7, 0, check_A_vert
+    beq $t7, 1, check_A_horz
+
+    check_A_vert:
+        li $t8, 0
+        addi $t7, $s0, -4
+        
+        check_colour_1_A_horz:
+            lw $t9, 0($t7)                
+            bne $t9, 0x383838, check_colour_2_A_horz
+            beq $t9, 0x383838, up_counters_A
+            
+        check_colour_2_A_horz:
+            bne $t9, 0x1c1c1c, game_loop
+            beq $t9, 0x1c1c1c, up_counters_A
+            
+        up_counters_A:
+            addi, $t8, $t8, 1
+            addi $t7, $t7, 128
+            
+            beq $t8, 3, check_pass
+            
+            j check_colour_1_A_horz
+            
+    check_A_horz:
+        lw $t9, -4($s0)
+        
+        check_colour_1_A:
+            bne $t9, 0x383838, check_colour_2_A
+            beq $t9, 0x383838, check_pass
+        check_colour_2_A:
+            bne $t9, 0x1c1c1c, game_loop
+            beq $t9, 0x1c1c1c, check_pass
+        check_pass:
+            jr $ra
     
 check_S:
 
@@ -325,6 +409,7 @@ check_S:
     
     beq $t7, 0, check_S_vert
     beq $t7, 1, check_S_horz
+    
     check_S_vert:
         lw $t9, 512($s0)
         
@@ -356,8 +441,6 @@ check_S:
             beq $t8, 3, check_pass
             
             j check_colour_1_S_horz
-                
-        
  
 check_D:
     li $t8, 2
