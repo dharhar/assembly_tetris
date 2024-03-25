@@ -257,12 +257,65 @@ keyboard_input:                     # A key is pressed
     syscall
     
     b game_loop
+    
+check:
+
+    li $t8, 2
+    div $s1, $t8
+    mfhi $t7
+    
+    beq $t7, 0, vert_check
+    beq $t7, 1, horz_check
+    
+    
+         # li $t1, 0x383838        # COLOR_GRID_ONE
+        # li $t2, 0x1c1c1c
+        
+    vert_check:
+        lw $t9, 512($s0)
+        
+        check_colour_1:
+            bne $t9, 0x383838, check_colour_2
+            beq $t9, 0x383838, check_pass
+        check_colour_2:
+            bne $t9, 0x1c1c1c, game_loop
+            beq $t9, 0x1c1c1c, check_pass
+        check_pass:
+            jr $ra
+        
+    horz_check:
+
+        check_left:
+            lw $t9, -4($s0)              # check left side
+        
+            check_colour_1_left:
+                bne $t9, 0x383838, check_colour_2_left
+                beq $t9, 0x383838, check_right
+            check_colour_2_left:
+                bne $t9, 0x1c1c1c, game_loop
+                beq $t9, 0x1c1c1c, check_right
+        
+        check_right:
+            lw $t9, 16($s0)              # check right side
+            
+            check_colour_1_right:
+                bne $t9, 0x383838, check_colour_2_right
+                beq $t9, 0x383838, check_pass
+            check_colour_2_right:
+                bne $t9, 0x1c1c1c, game_loop
+                beq $t9, 0x1c1c1c, check_pass
+                
+            check_pass:
+                jr $ra
 
 respond_to_Q:
+    
 	li $v0, 10                      # Quit gracefully
 	syscall
 	
 respond_to_W:
+    jal check
+
     addi $s1, $s1, 1                # increment variable that stores rotation
     addi $v0, $s1, 0                # ?
     
@@ -273,6 +326,7 @@ respond_to_W:
     j game_loop
 
 respond_to_A:
+    jal check
 
     li $a3, -4                   # pass in how much to shift
     jal i_type
@@ -280,12 +334,26 @@ respond_to_A:
     j game_loop
 
 respond_to_S:  
+
+ 
+    # addi $sp, $sp, -4
+    # sw $ra, 0($sp)
+    
+    # jal erase_i
+    
+    # lw $ra, 0($sp)
+    # addi $sp, $sp, 4
+
+    jal check
+    
     li $a3, 128                      # pass in how much to shift
     jal i_type                  # move the tetromino down
 
     j game_loop
 
 respond_to_D:                      # move the tetromino right
+    jal check
+    
     li $a3, 4                      # pass in how much to shift
     jal i_type
     
@@ -362,31 +430,64 @@ erase_i:
         li $t1, 0x383838        # COLOR_GRID_ONE
         li $t2, 0x1c1c1c        # COLOR_GRID_TWO
         
+        lw $t9, -4($s0)
+        beq $t9, 0x383838, col_type_2
+        beq $t9, 0x1c1c1c, col_type_1
         
-
-        sw $t1, 0($t0)
-        addi $t0, $t0, 128
-        sw $t1, 0($t0)
-        addi $t0, $t0, 128
-        sw $t1, 0($t0)
-        addi $t0, $t0, 128
-        sw $t1, 0($t0)
-        jr $ra
+        col_type_1:
+            sw $t1, 0($t0)
+            addi $t0, $t0, 128
+            sw $t2, 0($t0)
+            addi $t0, $t0, 128
+            sw $t1, 0($t0)
+            addi $t0, $t0, 128
+            sw $t2, 0($t0)
+            jr $ra
+            
+        col_type_2:
+        
+            sw $t2, 0($t0)
+            addi $t0, $t0, 128
+            sw $t1, 0($t0)
+            addi $t0, $t0, 128
+            sw $t2, 0($t0)
+            addi $t0, $t0, 128
+            sw $t1, 0($t0)
+            jr $ra
+       
         
     erase_i_horz:
         li $t0, 0               # set starting position as anchor
         add $t0, $t0, $s0
         
-        li $t1, 0x000000        # black   
-        sw $t1, 0($t0)
-        addi $t0, $t0, 4
-        sw $t1, 0($t0)
-        addi $t0, $t0, 4
-        sw $t1, 0($t0)
-        addi $t0, $t0, 4
-        sw $t1, 0($t0)
-        jr $ra
-        jr $ra
+        li $t1, 0x383838        # COLOR_GRID_ONE
+        li $t2, 0x1c1c1c        # COLOR_GRID_TWO
+        
+        lw $t9, -4($s0)
+        beq $t9, 0x383838, row_type_2
+        beq $t9, 0x1c1c1c, row_type_1
+        
+        # li $t1, 0x000000        # black   
+        
+        row_type_1:
+            sw $t1, 0($t0)
+            addi $t0, $t0, 4
+            sw $t2, 0($t0)
+            addi $t0, $t0, 4
+            sw $t1, 0($t0)
+            addi $t0, $t0, 4
+            sw $t2, 0($t0)
+            jr $ra
+        
+        row_type_2:
+            sw $t2, 0($t0)
+            addi $t0, $t0, 4
+            sw $t1, 0($t0)
+            addi $t0, $t0, 4
+            sw $t2, 0($t0)
+            addi $t0, $t0, 4
+            sw $t1, 0($t0)
+            jr $ra
     
   
 exit:
