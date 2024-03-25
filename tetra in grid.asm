@@ -357,8 +357,13 @@ erase_i:
         li $t0, 0               # set starting position as anchor
         add $t0, $t0, $s0
         
-        li $t1, 0x000000        # black   
-        # li $t1, 0xeddb11
+        # li $t1, 0x000000        # black   
+        
+        li $t1, 0x383838        # COLOR_GRID_ONE
+        li $t2, 0x1c1c1c        # COLOR_GRID_TWO
+        
+        
+
         sw $t1, 0($t0)
         addi $t0, $t0, 128
         sw $t1, 0($t0)
