@@ -33,20 +33,8 @@ ADDR_KBRD:
 	.globl main
 
 	# Run the Tetris game.
-	
-	
-init:
-	# Run the Tetris game.
-    lw $t0, ADDR_DSPL       # $t0 = base address for display
-        
-    lw $s0, ADDR_DSPL       # $s0 = curr anchor location
-    addi $s0, $s0, 800
-    li $s1, 0               # $s1 = curr orientation
-    li $s2, 0               # $s2 = curr shape
-    
     
 main:
-
         # Initialize the game
     lw $t0, ADDR_DSPL       # $t0 = base address for display
 
@@ -69,7 +57,7 @@ main:
     li $t1, 0x525252            # set $t1 to grey
     
     ###
-    
+
     
 init_board:                             # draw a grid across the entire screen
         beq $t9, 4096, draw_border      # once the entire grid is drawn, jump to drawing the playing box
@@ -153,8 +141,7 @@ draw_border:
         mul $t8, $a0, 2
         
         beq $t2, $t8, cover_background
-        j draw_v
-        
+        j draw_v  
         
     up_v:
         lw $t0, ADDR_DSPL 
@@ -226,6 +213,12 @@ cover_background:
 end_cover_background: 
 
 draw_new:
+    lw $s0, ADDR_DSPL       # $s0 = curr anchor location
+    addi $s0, $s0, 800
+    
+    li $s1, 0               # $s1 = curr orientation
+    li $s2, 0               # $s2 = curr shape
+    
     jal i_type
     j game_loop
 
@@ -235,7 +228,7 @@ game_loop:
 
 	syscall
 	
-    addi $t0, $t0, 200
+    # addi $t0, $t0, 200
 
     lw $t9, ADDR_KBRD               # $t0 = base address for keyboard
     lw $t8, 0($t9)                  # Load first word from keyboard
@@ -257,56 +250,6 @@ keyboard_input:                     # A key is pressed
     syscall
     
     b game_loop
-    
-check:
-
-    li $t8, 2
-    div $s1, $t8
-    mfhi $t7
-    
-    beq $t7, 0, vert_check
-    beq $t7, 1, horz_check
-    
-    
-         # li $t1, 0x383838        # COLOR_GRID_ONE
-        # li $t2, 0x1c1c1c
-        
-    vert_check:
-        lw $t9, 512($s0)
-        
-        check_colour_1:
-            bne $t9, 0x383838, check_colour_2
-            beq $t9, 0x383838, check_pass
-        check_colour_2:
-            bne $t9, 0x1c1c1c, game_loop
-            beq $t9, 0x1c1c1c, check_pass
-        check_pass:
-            jr $ra
-        
-    horz_check:
-
-        check_left:
-            lw $t9, -4($s0)              # check left side
-        
-            check_colour_1_left:
-                bne $t9, 0x383838, check_colour_2_left
-                beq $t9, 0x383838, check_right
-            check_colour_2_left:
-                bne $t9, 0x1c1c1c, game_loop
-                beq $t9, 0x1c1c1c, check_right
-        
-        check_right:
-            lw $t9, 16($s0)              # check right side
-            
-            check_colour_1_right:
-                bne $t9, 0x383838, check_colour_2_right
-                beq $t9, 0x383838, check_pass
-            check_colour_2_right:
-                bne $t9, 0x1c1c1c, game_loop
-                beq $t9, 0x1c1c1c, check_pass
-                
-            check_pass:
-                jr $ra
 
 respond_to_Q:
     
@@ -314,7 +257,7 @@ respond_to_Q:
 	syscall
 	
 respond_to_W:
-    jal check
+    jal check_W
 
     addi $s1, $s1, 1                # increment variable that stores rotation
     addi $v0, $s1, 0                # ?
@@ -326,7 +269,7 @@ respond_to_W:
     j game_loop
 
 respond_to_A:
-    jal check
+    jal check_A
 
     li $a3, -4                   # pass in how much to shift
     jal i_type
@@ -335,16 +278,7 @@ respond_to_A:
 
 respond_to_S:  
 
- 
-    # addi $sp, $sp, -4
-    # sw $ra, 0($sp)
-    
-    # jal erase_i
-    
-    # lw $ra, 0($sp)
-    # addi $sp, $sp, 4
-
-    jal check
+    jal check_S
     
     li $a3, 128                      # pass in how much to shift
     jal i_type                  # move the tetromino down
@@ -352,14 +286,109 @@ respond_to_S:
     j game_loop
 
 respond_to_D:                      # move the tetromino right
-    jal check
+    jal check_D
     
     li $a3, 4                      # pass in how much to shift
     jal i_type
     
     j game_loop
     
+check_W:
+    li $t8, 2
+    div $s1, $t8
+    mfhi $t7
+    
+    beq $t7, 0, check_W_vert
+    beq $t7, 1, check_W_horz
 
+    check_W_vert:
+        
+    check_W_horz:
+    
+check_A:
+    lw $t9, -4($s0)
+    
+    check_colour_1_A:
+        bne $t9, 0x383838, check_colour_2_A
+        beq $t9, 0x383838, check_pass
+    check_colour_2_A:
+        bne $t9, 0x1c1c1c, game_loop
+        beq $t9, 0x1c1c1c, check_pass
+   check_pass:
+        jr $ra
+    
+check_S:
+
+    li $t8, 2
+    div $s1, $t8
+    mfhi $t7
+    
+    beq $t7, 0, check_S_vert
+    beq $t7, 1, check_S_horz
+    check_S_vert:
+        lw $t9, 512($s0)
+        
+        check_colour_1_S_vert:
+            bne $t9, 0x383838, check_colour_2_S_vert
+            beq $t9, 0x383838, check_pass
+        check_colour_2_S_vert:
+            bne $t9, 0x1c1c1c, draw_new
+            beq $t9, 0x1c1c1c, check_pass
+            
+    check_S_horz:
+        li $t8, 0                           # counter
+        addi $t7, $s0, 128
+        
+    
+        check_colour_1_S_horz:
+            lw $t9, 0($t7)                    # position
+            bne $t9, 0x383838, check_colour_2_S_horz
+            beq $t9, 0x383838, up_counters
+            
+        check_colour_2_S_horz:
+            bne $t9, 0x1c1c1c, draw_new
+            beq $t9, 0x1c1c1c, up_counters
+            
+        up_counters:
+            addi, $t8, $t8, 1
+            addi $t7, $t7, 4
+            
+            beq $t8, 3, check_pass
+            
+            j check_colour_1_S_horz
+                
+        
+ 
+check_D:
+    li $t8, 2
+    div $s1, $t8
+    mfhi $t7
+    
+    beq $t7, 0, check_D_vert
+    beq $t7, 1, check_D_horz
+    
+    check_D_vert:
+        lw $t9, 4($s0)
+        
+        check_colour_1_D_vert:
+            bne $t9, 0x383838, check_colour_2_D_vert
+            beq $t9, 0x383838, check_pass
+        check_colour_2_D_vert:
+            bne $t9, 0x1c1c1c, game_loop
+            beq $t9, 0x1c1c1c, check_pass
+            
+    check_D_horz:
+        lw $t9, 16($s0)
+        
+        check_colour_1_D_horz:
+            bne $t9, 0x383838, check_colour_2_horz
+            beq $t9, 0x383838, check_pass
+        check_colour_2_horz:
+            bne $t9, 0x1c1c1c, game_loop
+            beq $t9, 0x1c1c1c, check_pass
+        check_pass:
+            jr $ra
+    
 i_type:
     
     addi $sp, $sp, -4
@@ -425,12 +454,23 @@ erase_i:
         li $t0, 0               # set starting position as anchor
         add $t0, $t0, $s0
         
-        # li $t1, 0x000000        # black   
-        
         li $t1, 0x383838        # COLOR_GRID_ONE
         li $t2, 0x1c1c1c        # COLOR_GRID_TWO
         
         lw $t9, -4($s0)
+        
+        beq $t9, 0xa6a6a6, go_above_start_vert
+        
+        j go_above_end_vert
+        
+        go_above_start_vert:
+            lw $t9, 4($s0)
+                
+            beq $t9, 0x383838, col_type_2
+            beq $t9, 0x1c1c1c, col_type_1
+            
+        go_above_end_vert:
+        
         beq $t9, 0x383838, col_type_2
         beq $t9, 0x1c1c1c, col_type_1
         
@@ -464,10 +504,20 @@ erase_i:
         li $t2, 0x1c1c1c        # COLOR_GRID_TWO
         
         lw $t9, -4($s0)
+        beq $t9, 0xa6a6a6, go_above_start
+        
+        j go_above_end
+        
+        go_above_start:
+            lw $t9, 16($s0)
+                
+            beq $t9, 0x383838, row_type_1
+            beq $t9, 0x1c1c1c, row_type_2
+            
+        go_above_end:
+        
         beq $t9, 0x383838, row_type_2
         beq $t9, 0x1c1c1c, row_type_1
-        
-        # li $t1, 0x000000        # black   
         
         row_type_1:
             sw $t1, 0($t0)
