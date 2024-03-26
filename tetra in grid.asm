@@ -34,31 +34,27 @@ ADDR_KBRD:
 
 	# Run the Tetris game.
     
-main:
-        # Initialize the game
-    lw $t0, ADDR_DSPL       # $t0 = base address for display
+main:                           # Initialize the game
+    lw $t0, ADDR_DSPL           # $t0 = base address for display
 
-    li $t1, 0x383838        # COLOR_GRID_ONE
-    li $t2, 0x1c1c1c        # COLOR_GRID_TWO
+    li $t1, 0x383838            # COLOR_GRID_ONE
+    li $t2, 0x1c1c1c            # COLOR_GRID_TWO
     
-    add $t3, $zero, $zero #set index value ($t3) to zero
+    add $t3, $zero, $zero       # set index value ($t3) to zero
     
-    li $t9, 0
+    li $t9, 0                   # some initial values for drawing the grid
     li $t8, 256
     add $t5, $t0, $t9
     
-    j init_board
+    j init_board                # initialise the board
         
-    addi $t2, $zero, 0	# h_count
-    addi $t3, $zero, 0	# w_count
-    addi $t4, $zero, 0  # even
+    addi $t2, $zero, 0          # stores counter for the height of the board 
+    addi $t3, $zero, 0          # stores counter for the width of the board
+    addi $t4, $zero, 0          # stores whether the current row is even or odd
     
-    # Initialize the game
     li $t1, 0x525252            # set $t1 to grey
     
-    ###
 
-    
 init_board:                             # draw a grid across the entire screen
         beq $t9, 4096, draw_border      # once the entire grid is drawn, jump to drawing the playing box
         
@@ -212,44 +208,42 @@ cover_background:
     
 end_cover_background: 
 
-draw_new:
+draw_new:                   # draws a new tetromino (rn just an i type by default)
     lw $s0, ADDR_DSPL       # $s0 = curr anchor location
-    addi $s0, $s0, 800
+    addi $s0, $s0, 800      # so it starts in the top middle of the grid
     
     li $s1, 0               # $s1 = curr orientation
     li $s2, 0               # $s2 = curr shape
     
-    jal i_type
-    j game_loop
+    jal i_type              # draws the new tetromino (how do u spell that man)
+    j game_loop             # starts the main game loop once the first piece is drawn
 
-game_loop:
-    li $v0, 32
-	li $a0, 1
+game_loop:                  # main game loop
+    li $v0, 32              # lowkey what do these do
+	li $a0, 1               # oh its keyboard things okay
 
 	syscall
-	
-    # addi $t0, $t0, 200
 
     lw $t9, ADDR_KBRD               # $t0 = base address for keyboard
     lw $t8, 0($t9)                  # Load first word from keyboard
     beq $t8, 1, keyboard_input      # If first word 1, key is pressed
     
-    beq $t8, 0, game_loop
+    beq $t8, 0, game_loop           # while there's no new keyboard input, do nothing
     
     j game_loop
 
 keyboard_input:                     # A key is pressed
     lw $a0, 4($t9)                  # Load second word from keyboard
     beq $a0, 0x71, respond_to_Q     # Check if the key q was pressed
-    beq $a0, 0x77, respond_to_W
-    beq $a0, 0x61, respond_to_A 
-    beq $a0, 0x73, respond_to_S 
-    beq $a0, 0x64, respond_to_D 
+    beq $a0, 0x77, respond_to_W     # Check if the key w was pressed
+    beq $a0, 0x61, respond_to_A     # Check if the key a was pressed
+    beq $a0, 0x73, respond_to_S     # Check if the key s was pressed
+    beq $a0, 0x64, respond_to_D     # Check if the key d was pressed
             
     li $v0, 1                       # ask system to print $a0
     syscall
     
-    b game_loop
+    b game_loop                     # once keyboard input is dealt with, loop back
 
 respond_to_Q:
     
@@ -260,106 +254,121 @@ respond_to_W:
     jal check_W
 
     addi $s1, $s1, 1                # increment variable that stores rotation
-    addi $v0, $s1, 0                # ?
+    addi $v0, $s1, 0                # sets "new key pressed" to zero again
     
     li $a3, 0                      # pass in how much to shift
     
-    jal i_type
+    jal i_type                      # draw a new i type (i.e. deal with movement)
     
-    j game_loop
+    j game_loop                     # loop back once dealt with
 
 respond_to_A:
-    jal check_A
+    jal check_A                     # checks that piece can move left safely
 
-    li $a3, -4                   # pass in how much to shift
-    jal i_type
+    li $a3, -4                      # pass in how much to shift
+    jal i_type                      # move the tetromino left
   
-    j game_loop
+    j game_loop                     # loop back once dealt with
 
 respond_to_S:  
-
-    jal check_S
+    jal check_S                     # checks that piece can move down safely
     
-    li $a3, 128                      # pass in how much to shift
-    jal i_type                  # move the tetromino down
+    li $a3, 128                     # pass in how much to shift
+    jal i_type                      # move the tetromino down
 
-    j game_loop
+    j game_loop                     # loop back once dealt with
 
-respond_to_D:                      # move the tetromino right
-    jal check_D
+respond_to_D:                       # move the tetromino right
+    jal check_D                     # checks that piece can move right safely
     
-    li $a3, 4                      # pass in how much to shift
+    li $a3, 4                       # pass in how much to shift
     jal i_type
     
-    j game_loop
+    j game_loop                      # loop back once dealt with
     
 check_W:
-    li $t8, 2
-    div $s1, $t8
-    mfhi $t7
+    li $t8, 2                       # checks that piece can rotate safely
+    div $s1, $t8    
+    mfhi $t7                        # remainder when curr orientation is divided by 2
     
-    beq $t7, 0, check_W_vert
-    beq $t7, 1, check_W_horz
+    beq $t7, 0, check_W_vert        # if remainder is 0, piece is vertical   
+    beq $t7, 1, check_W_horz        # if remainder is 1, piece is horizontal   
 
     check_W_vert:
+    
+### NEED TO NOT ERASE IF THE PIXEL IS ALREADY BLUE !!!!!!!!!! ADD THIS DUMBO
   
-        li $t8, 0                           # counter
-        addi $t7, $s0, 4
+        li $t8, 0                           # counter for loop
         
-        ##### check not frozen #####
+        ##### check not frozen start #####
         
-        lw $t9, 512($t7) 
-        
+        addi $t7, $s0, 0
+        lw $t9, 512($t7)                    # checks the colour one pixel below the shape since 
+                                            # the shape shouldnt move if on the floor/ a piece
         check_colour_1_below:
-            bne $t9, 0x383838, check_colour_2_below
+            bne $t9, 0x383838, check_colour_2_below     # checks for first colour
             beq $t9, 0x383838, check_pass
             
         check_colour_2_below:
-            bne $t9, 0x1c1c1c, game_loop
+            bne $t9, 0x1c1c1c, game_loop                # checks for second colour
             beq $t9, 0x1c1c1c, check_pass
         
-        ##### check not frozen #####
+        ##### check not frozen end #####
+        
+        addi $t7, $s0, 4                    # $t7 is the value the the right of the anchor position
     
         check_colour_1_W_vert:
-            lw $t9, 0($t7)                    # position
-            bne $t9, 0x383838, check_colour_2_W_vert
-            beq $t9, 0x383838, up_counters_W_vert
+            lw $t9, 0($t7)                                  # current position
+            bne $t9, 0x383838, check_colour_2_W_vert        # if not equal to first grid colour, check second grid colour
+            beq $t9, 0x383838, up_counters_W_vert           # if equal to the first grid colour, success to increase counter
             
-        check_colour_2_W_vert:
-            bne $t9, 0x1c1c1c, game_loop
-            beq $t9, 0x1c1c1c, up_counters_W_vert
+        check_colour_2_W_vert:  
+            bne $t9, 0x1c1c1c, game_loop                    # if not equal to second grid colour, piece shouldn't move
+            beq $t9, 0x1c1c1c, up_counters_W_vert           # if equal to the second grid colour, success to increase counter
             
-        up_counters_W_vert:
-            addi, $t8, $t8, 1
-            addi $t7, $t7, 4
+        up_counters_W_vert:                 # a counter kept to make sure all pixels next to the piece are checked
+            addi, $t8, $t8, 1               # increase counter
+            addi $t7, $t7, 4                # increase current pixel being looked at
             
-            beq $t8, 3, check_pass
+            beq $t8, 4, check_pass          # check if all pixels have been checked
             
-            j check_colour_1_W_vert
+            j check_colour_1_W_vert         # if not all, loop back
         
     check_W_horz:
-        li $t8, 0                           # counter
-        addi $t7, $s0, 384
+        li $t8, 0                           # counter for loop
+        addi $t7, $s0, 128                  # sets the starting position, one below anchor
     
         check_colour_1_W_horz:
-            lw $t9, 0($t7)                    # position
-            bne $t9, 0x383838, check_colour_2_W_horz
-            beq $t9, 0x383838, up_counters_W_horz
+            lw $t9, 0($t7)                  # position of current pixel
+            bne $t9, 0x383838, check_colour_2_W_horz        # if not equal to first grid colour, check second grid colour
+            beq $t9, 0x383838, up_counters_W_horz           # if equal to the first grid colour, success to increase counter
             
         check_colour_2_W_horz:
-            bne $t9, 0x1c1c1c, game_loop
-            beq $t9, 0x1c1c1c, up_counters_W_horz
+            bne $t9, 0x1c1c1c, game_loop                    # if not equal to second grid colour, piece shouldn't move
+            beq $t9, 0x1c1c1c, up_counters_W_horz           # if equal to the second grid colour, success to increase counter
             
-        up_counters_W_horz:
-            addi, $t8, $t8, 1
-            addi $t7, $t7, 128
+        up_counters_W_horz:                 # a counter kept to make sure all pixels next to the piece are checked
+            addi, $t8, $t8, 1               # increase counter
+            addi $t7, $t7, 128              # increase current pixel being looked at
             
-            beq $t8, 4, check_pass
+            beq $t8, 4, check_pass          # check if all pixels have been checked
             
-            j check_colour_1_W_horz
+            j check_colour_1_W_horz         # if not all, loop back
         
-    
+#### UHH WHY DID IT JUST STOP WHILE GOING HORIZONTALLY DOWN RANDOMLY?? RUDE, NEED TO FIX :( !!!!!!!!!!
+
+### ALSO HORIZONTAL PIECE SHOULDN'T STOP IF ANCHOR TOUCHING ANOTHER PEICE!! THATS WRONG FIX THAT
 check_A:
+    lw $t9, 512($s0)
+        
+    check_colour_1_A_vert_bottom:
+        bne $t9, 0x383838, check_colour_2_A_vert_bottom
+        beq $t9, 0x383838, after_check_floor_A
+    check_colour_2_A_vert_bottom:
+        bne $t9, 0x1c1c1c, draw_new
+        beq $t9, 0x1c1c1c, after_check_floor_A
+        
+   after_check_floor_A: 
 
     li $t8, 2
     div $s1, $t8
@@ -385,7 +394,7 @@ check_A:
             addi, $t8, $t8, 1
             addi $t7, $t7, 128
             
-            beq $t8, 3, check_pass
+            beq $t8, 4, check_pass
             
             j check_colour_1_A_horz
             
@@ -423,7 +432,6 @@ check_S:
     check_S_horz:
         li $t8, 0                           # counter
         addi $t7, $s0, 128
-        
     
         check_colour_1_S_horz:
             lw $t9, 0($t7)                    # position
@@ -438,7 +446,7 @@ check_S:
             addi, $t8, $t8, 1
             addi $t7, $t7, 4
             
-            beq $t8, 3, check_pass
+            beq $t8, 4, check_pass
             
             j check_colour_1_S_horz
  
@@ -451,14 +459,36 @@ check_D:
     beq $t7, 1, check_D_horz
     
     check_D_vert:
-        lw $t9, 4($s0)
+        lw $t9, 512($s0)
+        
+        check_colour_1_D_vert_bottom:
+            bne $t9, 0x383838, check_colour_2_D_vert_bottom
+            beq $t9, 0x383838, restart_here
+        check_colour_2_D_vert_bottom:
+            bne $t9, 0x1c1c1c, draw_new
+            beq $t9, 0x1c1c1c, restart_here
+            
+        restart_here:
+            li $t8, 0
+            addi $t7, $s0, 4
         
         check_colour_1_D_vert:
+            lw $t9, 0($t7)                
             bne $t9, 0x383838, check_colour_2_D_vert
-            beq $t9, 0x383838, check_pass
+            beq $t9, 0x383838, up_counters_D
+            
         check_colour_2_D_vert:
             bne $t9, 0x1c1c1c, game_loop
-            beq $t9, 0x1c1c1c, check_pass
+            beq $t9, 0x1c1c1c, up_counters_D
+            
+        up_counters_D:
+            addi, $t8, $t8, 1
+            addi $t7, $t7, 128
+            
+            beq $t8, 4, check_pass
+            
+            j check_colour_1_D_vert
+
             
     check_D_horz:
         lw $t9, 16($s0)
@@ -529,6 +559,8 @@ erase_i:
     div $s1, $t8
     mfhi $t7
     
+    ## FREAKING THING JUST WENT INTO THE WALL! BRUH!!! FIX THIS :((((
+    
     lw $t9, 4($s0)
     beq $t9, 0x47f5cf, erase_i_horz         # check to see if last draw shape was h/v
     beq $t9, 0x000000, erase_i_vert
@@ -565,6 +597,10 @@ erase_i:
             sw $t1, 0($t0)
             addi $t0, $t0, 128
             sw $t2, 0($t0)
+            
+            # lw $t9, 640($s0)
+            # beq $t9, 0xa6a6a6, draw_new
+            
             jr $ra
             
         col_type_2:
