@@ -295,8 +295,6 @@ check_W:
     beq $t7, 1, check_W_horz        # if remainder is 1, piece is horizontal   
 
     check_W_vert:
-    
-### NEED TO NOT ERASE IF THE PIXEL IS ALREADY BLUE !!!!!!!!!! ADD THIS DUMBO
   
         li $t8, 0                           # counter for loop
         
@@ -354,28 +352,41 @@ check_W:
             beq $t8, 4, check_pass          # check if all pixels have been checked
             
             j check_colour_1_W_horz         # if not all, loop back
-        
-#### UHH WHY DID IT JUST STOP WHILE GOING HORIZONTALLY DOWN RANDOMLY?? RUDE, NEED TO FIX :( !!!!!!!!!!
 
-### ALSO HORIZONTAL PIECE SHOULDN'T STOP IF ANCHOR TOUCHING ANOTHER PEICE!! THATS WRONG FIX THAT
 check_A:
-    lw $t9, 512($s0)
-        
-    check_colour_1_A_vert_bottom:
-        bne $t9, 0x383838, check_colour_2_A_vert_bottom
-        beq $t9, 0x383838, after_check_floor_A
-    check_colour_2_A_vert_bottom:
-        bne $t9, 0x1c1c1c, draw_new
-        beq $t9, 0x1c1c1c, after_check_floor_A
-        
-   after_check_floor_A: 
-
-    li $t8, 2
-    div $s1, $t8
-    mfhi $t7
+    li $t8, 2                       # checks that piece can rotate safely
+    div $s1, $t8    
+    mfhi $t7                        # remainder when curr orientation is divided by 2
     
-    beq $t7, 0, check_A_vert
-    beq $t7, 1, check_A_horz
+    beq $t7, 0, check_A_floor_vert        # if remainder is 0, piece is vertical   
+    beq $t7, 1, check_A_floor_horz        # if remainder is 1, piece is horizontal  
+    
+    check_A_floor_vert:
+    
+        lw $t9, 512($s0)                                        # first check that the piece isn't on the floor/ another piece vertical
+            
+        check_colour_1_A_vert_bottom:   
+            bne $t9, 0x383838, check_colour_2_A_vert_bottom      # if not equal to first grid colour, check second grid colour
+            beq $t9, 0x383838, after_check_floor_A               # if equal to the first grid colour, go to the next checks
+        check_colour_2_A_vert_bottom:
+            bne $t9, 0x1c1c1c, draw_new                         # if not equal to second grid colour, piece should reload as we're on the floor
+            beq $t9, 0x1c1c1c, after_check_floor_A              # if equal to the second grid colour, go to the next checks
+            
+    check_A_floor_horz:
+        lw $t9, 128($s0)                                        # first check that the piece isn't on the floor/ another piece vertical
+        
+        check_colour_1_A_horz_bottom:   
+            bne $t9, 0x383838, check_colour_2_A_horz_bottom      # if not equal to first grid colour, check second grid colour
+            beq $t9, 0x383838, after_check_floor_A               # if equal to the first grid colour, go to the next checks
+        check_colour_2_A_horz_bottom:
+            bne $t9, 0x1c1c1c, draw_new                         # if not equal to second grid colour, piece should reload as we're on the floor
+            beq $t9, 0x1c1c1c, after_check_floor_A              # if equal to the second grid colour, go to the next checks
+            
+    
+    after_check_floor_A: 
+    
+    beq $t7, 0, check_A_vert            # if remainder is 0, piece is vertical   
+    beq $t7, 1, check_A_horz            # if remainder is 1, piece is horizontal   
 
     check_A_vert:
         li $t8, 0
@@ -451,9 +462,35 @@ check_S:
             j check_colour_1_S_horz
  
 check_D:
-    li $t8, 2
-    div $s1, $t8
-    mfhi $t7
+    li $t8, 2                       # checks that piece can rotate safely
+    div $s1, $t8    
+    mfhi $t7                        # remainder when curr orientation is divided by 2
+    
+    beq $t7, 0, check_D_floor_vert        # if remainder is 0, piece is vertical   
+    beq $t7, 1, check_D_floor_horz        # if remainder is 1, piece is horizontal  
+    
+    check_D_floor_vert:
+    
+        lw $t9, 512($s0)                                        # first check that the piece isn't on the floor/ another piece vertical
+            
+        check_colour_1_D_vert_bottom:   
+            bne $t9, 0x383838, check_colour_2_D_vert_bottom      # if not equal to first grid colour, check second grid colour
+            beq $t9, 0x383838, after_check_floor_D              # if equal to the first grid colour, go to the next checks
+        check_colour_2_D_vert_bottom:
+            bne $t9, 0x1c1c1c, draw_new                         # if not equal to second grid colour, piece should reload as we're on the floor
+            beq $t9, 0x1c1c1c, after_check_floor_D              # if equal to the second grid colour, go to the next checks
+            
+    check_D_floor_horz:
+        lw $t9, 128($s0)                                        # first check that the piece isn't on the floor/ another piece vertical
+        
+        check_colour_1_D_horz_bottom:   
+            bne $t9, 0x383838, check_colour_2_D_horz_bottom      # if not equal to first grid colour, check second grid colour
+            beq $t9, 0x383838, after_check_floor_D               # if equal to the first grid colour, go to the next checks
+        check_colour_2_D_horz_bottom:
+            bne $t9, 0x1c1c1c, draw_new                         # if not equal to second grid colour, piece should reload as we're on the floor
+            beq $t9, 0x1c1c1c, after_check_floor_D              # if equal to the second grid colour, go to the next checks
+            
+    after_check_floor_D:
     
     beq $t7, 0, check_D_vert
     beq $t7, 1, check_D_horz
@@ -590,29 +627,51 @@ erase_i:
         beq $t9, 0x1c1c1c, col_type_1
         
         col_type_1:
-            sw $t1, 0($t0)
-            addi $t0, $t0, 128
-            sw $t2, 0($t0)
-            addi $t0, $t0, 128
-            sw $t1, 0($t0)
-            addi $t0, $t0, 128
-            sw $t2, 0($t0)
+            col_type_1_a:
+                beq $t0, 0x47f5cf, col_type_1_b
+                sw $t1, 0($t0)
+                addi $t0, $t0, 128
+                
+            col_type_1_b:
+                beq $t0, 0x47f5cf, col_type_1_c
+                sw $t2, 0($t0)
+                addi $t0, $t0, 128
             
-            # lw $t9, 640($s0)
-            # beq $t9, 0xa6a6a6, draw_new
+            col_type_1_c:
+                beq $t0, 0x47f5cf, col_type_1_d
+                sw $t1, 0($t0)
+                addi $t0, $t0, 128
+                
+            col_type_1_d:
+                beq $t0, 0x47f5cf, col_type_1_end
+                sw $t2, 0($t0)
             
-            jr $ra
+            col_type_1_end:
+                jr $ra
             
         col_type_2:
         
-            sw $t2, 0($t0)
-            addi $t0, $t0, 128
-            sw $t1, 0($t0)
-            addi $t0, $t0, 128
-            sw $t2, 0($t0)
-            addi $t0, $t0, 128
-            sw $t1, 0($t0)
-            jr $ra
+            col_type_2_a:
+                beq $t0, 0x47f5cf, col_type_2_b
+                sw $t2, 0($t0)
+                addi $t0, $t0, 128
+                
+            col_type_2_b:
+                beq $t0, 0x47f5cf, col_type_2_c
+                sw $t1, 0($t0)
+                addi $t0, $t0, 128
+                
+            col_type_2_c:
+                beq $t0, 0x47f5cf, col_type_2_d
+                sw $t2, 0($t0)
+                addi $t0, $t0, 128
+                
+            col_type_2_d:
+                beq $t0, 0x47f5cf, col_type_2_end
+                sw $t1, 0($t0)
+                
+            col_type_2_end:
+                jr $ra
        
         
     erase_i_horz:
@@ -624,6 +683,7 @@ erase_i:
         
         lw $t9, -4($s0)
         beq $t9, 0xa6a6a6, go_above_start
+        beq $t9, 0x47f5cf, go_above_start
         
         j go_above_end
         
@@ -639,24 +699,49 @@ erase_i:
         beq $t9, 0x1c1c1c, row_type_1
         
         row_type_1:
-            sw $t1, 0($t0)
-            addi $t0, $t0, 4
-            sw $t2, 0($t0)
-            addi $t0, $t0, 4
-            sw $t1, 0($t0)
-            addi $t0, $t0, 4
-            sw $t2, 0($t0)
-            jr $ra
+            row_type_1_a:
+                beq $t0, 0x47f5cf, row_type_1_b
+                sw $t1, 0($t0)
+                addi $t0, $t0, 4
+            
+            row_type_1_b:
+                beq $t0, 0x47f5cf, row_type_1_c
+                sw $t2, 0($t0)
+                addi $t0, $t0, 4
+                
+            row_type_1_c:
+                beq $t0, 0x47f5cf, row_type_1_d
+                sw $t1, 0($t0)
+                addi $t0, $t0, 4
+            
+            row_type_1_d:   
+                beq $t0, 0x47f5cf, row_type_1_end
+                sw $t2, 0($t0)
+            
+            row_type_1_end:
+                jr $ra
         
         row_type_2:
-            sw $t2, 0($t0)
-            addi $t0, $t0, 4
-            sw $t1, 0($t0)
-            addi $t0, $t0, 4
-            sw $t2, 0($t0)
-            addi $t0, $t0, 4
-            sw $t1, 0($t0)
-            jr $ra
-    
+            row_type_2_a:  
+                beq $t0, 0x47f5cf, row_type_2_b
+                sw $t2, 0($t0)
+                addi $t0, $t0, 4
+                
+            row_type_2_b:
+                beq $t0, 0x47f5cf, row_type_2_c   
+                sw $t1, 0($t0)
+                addi $t0, $t0, 4
+                
+            row_type_2_c:
+                beq $t0, 0x47f5cf, row_type_2_d
+                sw $t2, 0($t0)
+                addi $t0, $t0, 4
+                
+            row_type_2_d:
+                beq $t0, 0x47f5cf, row_type_2_end
+                sw $t1, 0($t0)
+                
+            row_type_2_end:
+                jr $ra
   
 exit:
