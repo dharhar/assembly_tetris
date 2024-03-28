@@ -66,6 +66,7 @@ init_board:                             # draw a grid across the entire screen
         beq $t7, 0, draw_even_row
         beq $t7, 128, draw_odd_row
         
+
         j game_loop
         
 end_init_board:
@@ -208,14 +209,15 @@ cover_background:
     
 end_cover_background: 
 
-draw_new:                   # draws a new tetromino (rn just an i type by default)
+draw_new:                   # draws a new tetromino (rn just an i type by default)  
     lw $s0, ADDR_DSPL       # $s0 = curr anchor location
-    addi $s0, $s0, 800      # so it starts in the top middle of the grid
+    addi $s0, $s0, 800      # so it starts in the top middle of the gridf
     
     li $s1, 0               # $s1 = curr orientation
     li $s2, 0               # $s2 = curr shape
     
     jal i_type              # draws the new tetromino (how do u spell that man)
+    jal check_frozen
     j game_loop             # starts the main game loop once the first piece is drawn
 
 game_loop:                  # main game loop
@@ -273,7 +275,8 @@ respond_to_A:
     j game_loop                     # loop back once dealt with
 
 respond_to_S:  
-    jal check_S                     # checks that piece can move down safely
+    jal check_S                    
+    # checks that piece can move down safely
     
     li $a3, 128                     # pass in how much to shift
     jal i_type                      # move the tetromino down
@@ -304,6 +307,8 @@ check_frozen:
         
         beq $t1, 0x47f5cf, draw_new
         beq $t1, 0xa6a6a6, draw_new
+        
+        ## HERE INSTEAD OF DRAW NEW, DO A CHECK FOR FULL ROWS!! (MAYBE? IDK)
     
         jr $ra
         
@@ -317,12 +322,49 @@ check_frozen:
             beq $t2, 0x47f5cf, draw_new
             beq $t2, 0xa6a6a6, draw_new
             
+            # CHANGE BACK TO DRAW NEW ^^? IDK
+            
             addi $t0, $t0, 1
             addi $t1, $t1, 4
        
         blt $t0, 4, fh_start 
         jr $ra
         
+check_complete_row:
+    li $t0, 0                       # row counter
+    li $t1, 0                       # column counter
+    
+    li $t8, 2                       # checks whether, after a piece has moved in some way, it is in a position where it should stop and a new one should load
+    div $s1, $t8    
+    mfhi $t7                        # remainder when curr orientation is divided by 2
+    
+    beq $t7, 0, check_complete_row_vert        # if remainder is 0, piece is vertical   
+    beq $t7, 1, check_complete_row_horz        # if remainder is 1, piece is horizontal 
+    
+    check_complete_row_vert:
+        
+    check_complete_row_horz:
+         lw $t1, ADDR_DSPL
+         sub $t2, $s0, $t1
+         div $t2, $t2, 128
+         sll $t2, $t2, 7
+         add $t2, $t2, $t1
+         
+         li $t0, 0 
+         
+         check_complete_row_horz_loop:
+            lw $t1, 0($t2)
+            beq $t1, 0x383838, exit_check_complete_row_horz_loop
+            beq $t1, 0x1c1c1c, exit_check_complete_row_horz_loop
+            
+            addi $t0, $t0, 1
+            addi $t2, $t2, 4
+            
+            # beq 
+            
+        exit_check_complete_row_horz_loop:
+            jr $ra
+
 check_W:
     li $t8, 2                       # checks that piece can rotate safely
     div $s1, $t8    
@@ -597,6 +639,7 @@ erase_i:
         
         col_type_1:
             col_type_1_a:
+                # lw $t
                 beq $t0, 0x47f5cf, col_type_1_b
                 sw $t1, 0($t0)
                 addi $t0, $t0, 128
