@@ -309,15 +309,17 @@ check_frozen:
         
     check_frozen_horz:
         li $t0, 0                       # counter to check all bottom edges of horizontal shape
-        lw $t1, 128($s0)
+        addi $t1, $s0, 128
+       
         
         fh_start:
-        beq $t1, 0x47f5cf, draw_new
-        beq $t1, 0xa6a6a6, draw_new
-        
-        addi $t0, $t0, 1
-        addi $t1, $t1, 4
-        
+            lw $t2, 0($t1) 
+            beq $t2, 0x47f5cf, draw_new
+            beq $t2, 0xa6a6a6, draw_new
+            
+            addi $t0, $t0, 1
+            addi $t1, $t1, 4
+       
         blt $t0, 4, fh_start 
         jr $ra
         
@@ -332,22 +334,7 @@ check_W:
     check_W_vert:
   
         li $t8, 0                           # counter for loop
-        
-        ##### check not frozen start #####
-        
-        addi $t7, $s0, 0
-        lw $t9, 512($t7)                    # checks the colour one pixel below the shape since 
-                                            # the shape shouldnt move if on the floor/ a piece
-        check_colour_1_below:
-            bne $t9, 0x383838, check_colour_2_below     # checks for first colour
-            beq $t9, 0x383838, check_pass
-            
-        check_colour_2_below:
-            bne $t9, 0x1c1c1c, game_loop                # checks for second colour
-            beq $t9, 0x1c1c1c, check_pass
-        
-        ##### check not frozen end #####
-        
+    
         addi $t7, $s0, 4                    # $t7 is the value the the right of the anchor position
     
         check_colour_1_W_vert:
@@ -392,33 +379,6 @@ check_A:
     li $t8, 2                       # checks that piece can rotate safely
     div $s1, $t8    
     mfhi $t7                        # remainder when curr orientation is divided by 2
-    
-    beq $t7, 0, check_A_floor_vert        # if remainder is 0, piece is vertical   
-    beq $t7, 1, check_A_floor_horz        # if remainder is 1, piece is horizontal  
-    
-    check_A_floor_vert:
-    
-        lw $t9, 512($s0)                                        # first check that the piece isn't on the floor/ another piece vertical
-            
-        check_colour_1_A_vert_bottom:   
-            bne $t9, 0x383838, check_colour_2_A_vert_bottom      # if not equal to first grid colour, check second grid colour
-            beq $t9, 0x383838, after_check_floor_A               # if equal to the first grid colour, go to the next checks
-        check_colour_2_A_vert_bottom:
-            bne $t9, 0x1c1c1c, draw_new                         # if not equal to second grid colour, piece should reload as we're on the floor
-            beq $t9, 0x1c1c1c, after_check_floor_A              # if equal to the second grid colour, go to the next checks
-            
-    check_A_floor_horz:
-        lw $t9, 128($s0)                                        # first check that the piece isn't on the floor/ another piece vertical
-        
-        check_colour_1_A_horz_bottom:   
-            bne $t9, 0x383838, check_colour_2_A_horz_bottom      # if not equal to first grid colour, check second grid colour
-            beq $t9, 0x383838, after_check_floor_A               # if equal to the first grid colour, go to the next checks
-        check_colour_2_A_horz_bottom:
-            bne $t9, 0x1c1c1c, draw_new                         # if not equal to second grid colour, piece should reload as we're on the floor
-            beq $t9, 0x1c1c1c, after_check_floor_A              # if equal to the second grid colour, go to the next checks
-            
-    
-    after_check_floor_A: 
     
     beq $t7, 0, check_A_vert            # if remainder is 0, piece is vertical   
     beq $t7, 1, check_A_horz            # if remainder is 1, piece is horizontal   
@@ -500,32 +460,6 @@ check_D:
     li $t8, 2                       # checks that piece can rotate safely
     div $s1, $t8    
     mfhi $t7                        # remainder when curr orientation is divided by 2
-    
-    beq $t7, 0, check_D_floor_vert        # if remainder is 0, piece is vertical   
-    beq $t7, 1, check_D_floor_horz        # if remainder is 1, piece is horizontal  
-    
-    check_D_floor_vert:
-    
-        lw $t9, 512($s0)                                        # first check that the piece isn't on the floor/ another piece vertical
-            
-        check_colour_1_D_vert_bottom:   
-            bne $t9, 0x383838, check_colour_2_D_vert_bottom      # if not equal to first grid colour, check second grid colour
-            beq $t9, 0x383838, after_check_floor_D              # if equal to the first grid colour, go to the next checks
-        check_colour_2_D_vert_bottom:
-            bne $t9, 0x1c1c1c, draw_new                         # if not equal to second grid colour, piece should reload as we're on the floor
-            beq $t9, 0x1c1c1c, after_check_floor_D              # if equal to the second grid colour, go to the next checks
-            
-    check_D_floor_horz:
-        lw $t9, 128($s0)                                        # first check that the piece isn't on the floor/ another piece vertical
-        
-        check_colour_1_D_horz_bottom:   
-            bne $t9, 0x383838, check_colour_2_D_horz_bottom      # if not equal to first grid colour, check second grid colour
-            beq $t9, 0x383838, after_check_floor_D               # if equal to the first grid colour, go to the next checks
-        check_colour_2_D_horz_bottom:
-            bne $t9, 0x1c1c1c, draw_new                         # if not equal to second grid colour, piece should reload as we're on the floor
-            beq $t9, 0x1c1c1c, after_check_floor_D              # if equal to the second grid colour, go to the next checks
-            
-    after_check_floor_D:
     
     beq $t7, 0, check_D_vert
     beq $t7, 1, check_D_horz
