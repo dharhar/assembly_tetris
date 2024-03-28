@@ -260,6 +260,7 @@ respond_to_W:
     
     jal i_type                      # draw a new i type (i.e. deal with movement)
     
+    jal check_frozen
     j game_loop                     # loop back once dealt with
 
 respond_to_A:
@@ -268,6 +269,7 @@ respond_to_A:
     li $a3, -4                      # pass in how much to shift
     jal i_type                      # move the tetromino left
   
+    jal check_frozen
     j game_loop                     # loop back once dealt with
 
 respond_to_S:  
@@ -276,6 +278,7 @@ respond_to_S:
     li $a3, 128                     # pass in how much to shift
     jal i_type                      # move the tetromino down
 
+    jal check_frozen
     j game_loop                     # loop back once dealt with
 
 respond_to_D:                       # move the tetromino right
@@ -284,8 +287,40 @@ respond_to_D:                       # move the tetromino right
     li $a3, 4                       # pass in how much to shift
     jal i_type
     
+    jal check_frozen
     j game_loop                      # loop back once dealt with
     
+    
+check_frozen:
+    li $t8, 2                       # checks whether, after a piece has moved in some way, it is in a position where it should stop and a new one should load
+    div $s1, $t8    
+    mfhi $t7                        # remainder when curr orientation is divided by 2
+    
+    beq $t7, 0, check_frozen_vert        # if remainder is 0, piece is vertical   
+    beq $t7, 1, check_frozen_horz        # if remainder is 1, piece is horizontal 
+    
+    check_frozen_vert:
+        lw $t1, 512($s0)
+        
+        beq $t1, 0x47f5cf, draw_new
+        beq $t1, 0xa6a6a6, draw_new
+    
+        jr $ra
+        
+    check_frozen_horz:
+        li $t0, 0                       # counter to check all bottom edges of horizontal shape
+        lw $t1, 128($s0)
+        
+        fh_start:
+        beq $t1, 0x47f5cf, draw_new
+        beq $t1, 0xa6a6a6, draw_new
+        
+        addi $t0, $t0, 1
+        addi $t1, $t1, 4
+        
+        blt $t0, 4, fh_start 
+        jr $ra
+        
 check_W:
     li $t8, 2                       # checks that piece can rotate safely
     div $s1, $t8    
