@@ -305,8 +305,8 @@ check_frozen:
     check_frozen_vert:
         lw $t1, 512($s0)
         
-        beq $t1, 0x47f5cf, draw_new
-        beq $t1, 0xa6a6a6, draw_new
+        beq $t1, 0x47f5cf, check_completed_rows
+        beq $t1, 0xa6a6a6, check_completed_rows
         
         ## HERE INSTEAD OF DRAW NEW, DO A CHECK FOR FULL ROWS!! (MAYBE? IDK)
     
@@ -319,8 +319,8 @@ check_frozen:
         
         fh_start:
             lw $t2, 0($t1) 
-            beq $t2, 0x47f5cf, draw_new
-            beq $t2, 0xa6a6a6, draw_new
+            beq $t2, 0x47f5cf, check_completed_rows
+            beq $t2, 0xa6a6a6, check_completed_rows
             
             # CHANGE BACK TO DRAW NEW ^^? IDK
             
@@ -330,7 +330,7 @@ check_frozen:
         blt $t0, 4, fh_start 
         jr $ra
         
-check_complete_row:
+check_completed_rows:
     li $t0, 0                       # row counter
     li $t1, 0                       # column counter
     
@@ -342,28 +342,85 @@ check_complete_row:
     beq $t7, 1, check_complete_row_horz        # if remainder is 1, piece is horizontal 
     
     check_complete_row_vert:
+        li $t7, 0                               # counter for each pixel of the vertical block
+        add $a0, $s0, $0                        # put the anchor position in $a0
         
+        check_complete_row_vert_loop:
+            jal check_row_complete
+            
+            addi $t7, $t7, 1
+            addi $a0, $a0, 128
+            
+            beq $t7, 4, draw_new
+            j check_complete_row_vert_loop
+    
     check_complete_row_horz:
-         lw $t1, ADDR_DSPL
-         sub $t2, $s0, $t1
-         div $t2, $t2, 128
-         sll $t2, $t2, 7
-         add $t2, $t2, $t1
-         
-         li $t0, 0 
-         
-         check_complete_row_horz_loop:
-            lw $t1, 0($t2)
-            beq $t1, 0x383838, exit_check_complete_row_horz_loop
-            beq $t1, 0x1c1c1c, exit_check_complete_row_horz_loop
+        add $a0, $s0, $0
+        jal check_row_complete
+        j draw_new
+    
+    check_row_complete:
+        lw $t1, ADDR_DSPL                       # set $t1 to be the base address of the display
+        sub $t2, $a0, $t1                       # subtract the current address of the pixel being looked at from the base address and store in $t2
+        div $t2, $t2, 128                       # div by 128 to see what row we're on
+        sll $t2, $t2, 7                         # shift this value left by 7 i.e. multiply by 128 to get the beginning of the row
+        add $t2, $t2, $t1                       # add this back to the base address to get the starting pixel of the row and store in $t2
+        add $a1, $t2, $zero                     # also save this in $a1 to use later
+        
+        li $t0, 0                               # starting counter
+        
+        check_row_complete_loop:
+            lw $t1, 0($t2)                      # load the colour in $t2, the curr pixel, into $t1
+            beq $t1, 0x383838, exit_check_complete_row_loop        # if the colour is the first grid colour, the row isn't complete
+            beq $t1, 0x1c1c1c, exit_check_complete_row_loop        # if the colour is the second grid colour, the row isn't complete
             
-            addi $t0, $t0, 1
-            addi $t2, $t2, 4
+            addi $t0, $t0, 1                    # add one to the current column counter
+            addi $t2, $t2, 4                    # go to the next pixel
             
-            # beq 
+            beq $t0, 14, shift_row_down         # if we've got to the end of the row and not broken out of the loop, the row is complete
             
-        exit_check_complete_row_horz_loop:
+            j check_row_complete_loop           # loop again
+
+        shift_row_down:             
+            add $t1, $a1, $zero                 # set $t1 as the first pixel of the row we're looking at
+            addi $t1, $t1, 128
+            
+            shift_row_down_loop:
+                lw $t2, ADDR_DSPL                       # set $t2 to be the base address of the display
+                sub $t3, $t1, $t2                       # get the difference between the current pixel and the base address
+                
+                lw $t4, -128($t1)                         # get colour from pixel above
+                 
+                beq $t4, 0x383838, paint_grid_colour_1
+                beq $t4, 0x1c1c1c, paint_grid_colour_2
+                beq $t4, 0x47f5cf, paint_grid_piece_colour
+                
+                shift_row_down_loop_restart:
+                
+                addi $t1, $t1, -4
+                
+                ble $t3, 128, exit_check_complete_row_loop          # if we're at the first row, stop
+                j shift_row_down_loop
+                
+            paint_grid_colour_1:
+                li $t5, 0x1c1c1c
+                sw $t5, 0($t1) 
+                j shift_row_down_loop_restart
+                
+            paint_grid_colour_2:
+                li $t5, 0x383838
+                sw $t5, 0($t1)  
+                j shift_row_down_loop_restart
+                
+            paint_grid_piece_colour:
+                li $t5, 0x47f5cf
+                sw $t5, 0($t1)  
+                j shift_row_down_loop_restart
+            
+        exit_check_complete_row_loop:
             jr $ra
+            
+
 
 check_W:
     li $t8, 2                       # checks that piece can rotate safely
