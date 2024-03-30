@@ -22,6 +22,9 @@ ADDR_DSPL:
 ADDR_KBRD:
     .word 0xffff0000
 
+GRAVITY_TIME:
+    .word 100
+
 ##############################################################################
 # Mutable Data
 ##############################################################################
@@ -35,6 +38,7 @@ ADDR_KBRD:
 	# Run the Tetris game.
     
 main:                           # Initialize the game
+    lw $s7, GRAVITY_TIME        # Load gravity timer
     lw $t0, ADDR_DSPL           # $t0 = base address for display
 
     li $t1, 0x383838            # COLOR_GRID_ONE
@@ -216,9 +220,194 @@ draw_new:                   # draws a new tetromino (rn just an i type by defaul
     li $s1, 0               # $s1 = curr orientation
     li $s2, 0               # $s2 = curr shape
     
+    lw $t6, 128($s0)                    # check the colour of the tetromino where we're supposed to draw it
+    beq $t6, 0x47f5cf, game_over        # checks if we can draw the tetromino (if not, game over)
+    
     jal i_type              # draws the new tetromino (how do u spell that man)
     jal check_frozen
     j game_loop             # starts the main game loop once the first piece is drawn
+
+game_over:
+    li $v0, 32
+    li $a0, 500            # wait for a bit
+    syscall 
+    
+    jal draw_game_over_screen
+    
+draw_game_over_screen:
+    li $t0, 0
+    li $t1, 0x000000
+    li $t2, 0xffffff
+    lw $s0, ADDR_DSPL
+    li $a0, 1
+    j draw_black_bg
+
+    draw_black_bg:                      # draw the background
+        sw $t2, 0($s0)
+        sw $t2, 4($s0)
+        sw $t2, 8($s0)
+        sw $t2, 12($s0)
+        sw $t2, 16($s0)
+        sw $t2, 20($s0)
+        sw $t2, 24($s0)
+        sw $t2, 28($s0)
+        syscall
+        sw $t1, 0($s0)
+        sw $t1, 4($s0)
+        sw $t1, 8($s0)
+        sw $t1, 12($s0)                
+        sw $t1, 16($s0)
+        sw $t1, 20($s0)
+        sw $t1, 24($s0)
+        sw $t1, 28($s0)                 # small deleting animation
+        
+        addi $s0, $s0, 32
+        addi $t0, $t0, 8
+        beq $t0, 1024, draw_game_over
+        
+        j draw_black_bg
+    
+    draw_game_over:
+        lw $s0, ADDR_DSPL
+        addi $s0, $s0, 404              # move to the top left side of screen
+        sw $t2, 4($s0)
+        sw $t2, 8($s0)
+        sw $t2, 12($s0)
+        sw $t2, 24($s0)
+        sw $t2, 28($s0)
+        sw $t2, 32($s0)
+        sw $t2, 40($s0)
+        sw $t2, 56($s0)
+        sw $t2, 64($s0)
+        sw $t2, 68($s0)
+        sw $t2, 72($s0)
+        sw $t2, 76($s0)
+        
+        syscall
+        addi $s0, $s0, 128
+        sw $t2, 0($s0)
+        sw $t2, 20($s0)
+        sw $t2, 32($s0)
+        sw $t2, 40($s0)
+        sw $t2, 44($s0)
+        sw $t2, 52($s0)
+        sw $t2, 56($s0)
+        sw $t2, 64($s0)
+        
+        syscall
+        addi $s0, $s0, 128
+        sw $t2, 0($s0)
+        sw $t2, 8($s0)
+        sw $t2, 12($s0)
+        sw $t2, 20($s0)
+        sw $t2, 24($s0)
+        sw $t2, 28($s0)
+        sw $t2, 32($s0)
+        sw $t2, 40($s0)
+        sw $t2, 48($s0)
+        sw $t2, 56($s0)
+        sw $t2, 64($s0)
+        sw $t2, 68($s0)
+        sw $t2, 72($s0)
+                
+        syscall
+        addi $s0, $s0, 128
+        sw $t2, 0($s0)
+        sw $t2, 12($s0)
+        sw $t2, 20($s0)
+        sw $t2, 32($s0)
+        sw $t2, 40($s0)
+        sw $t2, 56($s0)
+        sw $t2, 64($s0)
+        
+        syscall
+        addi $s0, $s0, 128
+        sw $t2, 0($s0)
+        sw $t2, 4($s0)
+        sw $t2, 8($s0)
+        sw $t2, 12($s0)
+        sw $t2, 20($s0)
+        sw $t2, 32($s0)
+        sw $t2, 40($s0)
+        sw $t2, 56($s0)
+        sw $t2, 64($s0)
+        sw $t2, 68($s0)
+        sw $t2, 72($s0)
+        sw $t2, 76($s0)
+        
+        syscall
+        addi $s0, $s0, 256
+        sw $t2, 0($s0)
+        sw $t2, 4($s0)
+        sw $t2, 8($s0)
+        sw $t2, 20($s0)
+        sw $t2, 36($s0)
+        sw $t2, 44($s0)
+        sw $t2, 48($s0)
+        sw $t2, 52($s0)
+        sw $t2, 56($s0)
+        sw $t2, 64($s0)
+        sw $t2, 68($s0)
+        sw $t2, 72($s0)
+        
+        syscall
+        addi $s0, $s0, 128
+        sw $t2, 0($s0)
+        sw $t2, 12($s0)
+        sw $t2, 20($s0)
+        sw $t2, 36($s0)
+        sw $t2, 44($s0)
+        sw $t2, 64($s0)
+        sw $t2, 76($s0)
+        
+        syscall
+        addi $s0, $s0, 128
+        sw $t2, 0($s0)
+        sw $t2, 12($s0)
+        sw $t2, 20($s0)
+        sw $t2, 24($s0)
+        sw $t2, 32($s0)
+        sw $t2, 36($s0)
+        sw $t2, 44($s0)
+        sw $t2, 48($s0)
+        sw $t2, 52($s0)
+        sw $t2, 64($s0)
+        sw $t2, 68($s0)
+        sw $t2, 72($s0)
+        sw $t2, 76($s0)
+        
+        syscall
+        addi $s0, $s0, 128
+        sw $t2, 0($s0)
+        sw $t2, 12($s0)
+        sw $t2, 24($s0)
+        sw $t2, 28($s0)
+        sw $t2, 32($s0)
+        sw $t2, 44($s0)
+        sw $t2, 64($s0)
+        sw $t2, 72($s0)
+        
+        syscall
+        addi $s0, $s0, 128
+        sw $t2, 4($s0)
+        sw $t2, 8($s0)
+        sw $t2, 12($s0)
+        sw $t2, 28($s0)
+        sw $t2, 44($s0)
+        sw $t2, 48($s0)
+        sw $t2, 52($s0)
+        sw $t2, 56($s0)
+        sw $t2, 64($s0)
+        sw $t2, 76($s0)
+        
+    draw_score:
+        
+    
+        j respond_to_Q
+    
+    draw_press_R_to_retry:
+    
+    
 
 game_loop:                  # main game loop
     li $v0, 32              # lowkey what do these do
@@ -229,6 +418,11 @@ game_loop:                  # main game loop
     lw $t9, ADDR_KBRD               # $t0 = base address for keyboard
     lw $t8, 0($t9)                  # Load first word from keyboard
     beq $t8, 1, keyboard_input      # If first word 1, key is pressed
+    
+    subi $s7, $s7, 1                # decrement gravity timer
+    # sw $s7, GRAVITY_TIME            # store updated timer value
+    
+    beq $s7, 0, respond_to_S        # if gravity timer hits 0, move piece down
     
     beq $t8, 0, game_loop           # while there's no new keyboard input, do nothing
     
@@ -241,11 +435,69 @@ keyboard_input:                     # A key is pressed
     beq $a0, 0x61, respond_to_A     # Check if the key a was pressed
     beq $a0, 0x73, respond_to_S     # Check if the key s was pressed
     beq $a0, 0x64, respond_to_D     # Check if the key d was pressed
+    beq $a0, 0x70, respond_to_P
             
     li $v0, 1                       # ask system to print $a0
     syscall
     
     b game_loop                     # once keyboard input is dealt with, loop back
+
+respond_to_P:
+    lw $t8, ADDR_KBRD
+    li $t7, 0
+    j draw_pause_and_wait   
+    
+    draw_pause_and_wait:
+        lw $t6, ADDR_DSPL
+        li $t5, 0xffffff
+        
+        sw $t5, 1344($t6)       # draw pause symbol
+        sw $t5, 1472($t6)
+        sw $t5, 1600($t6)
+        sw $t5, 1728($t6)
+    
+        sw $t5, 1352($t6)
+        sw $t5, 1480($t6)
+        sw $t5, 1608($t6)
+        sw $t5, 1736($t6)
+        # sw $
+        
+        li $v0, 32
+        li $a0, 1
+        syscall 
+        
+        # li $t8, 0                       
+        
+        
+        lw $t7, 0($t8)                  # Load first word from keyboard
+        beq $t7, 1, check_for_another_p
+        # beq $t7, 0x70, erase_pause       # go back to game loop if p was pressed again
+        
+        j draw_pause_and_wait
+    
+    check_for_another_p:
+        lw $t7, 4($t8)
+        beq $t7, 0x70, erase_pause
+        b draw_pause_and_wait
+    
+    erase_pause:
+        lw $t6, ADDR_DSPL
+        li $t5, 0x000000
+        
+        sw $t5, 1344($t6)       # draw pause symbol
+        sw $t5, 1472($t6)
+        sw $t5, 1600($t6)
+        sw $t5, 1728($t6)
+    
+        sw $t5, 1352($t6)
+        sw $t5, 1480($t6)
+        sw $t5, 1608($t6)
+        sw $t5, 1736($t6)
+    
+    
+        li $t4, 100                 # reset gravity counter
+        b game_loop
+
 
 respond_to_Q:
     
@@ -274,7 +526,8 @@ respond_to_A:
     jal check_frozen
     j game_loop                     # loop back once dealt with
 
-respond_to_S:  
+respond_to_S:
+    lw $s7, GRAVITY_TIME                     # reset gravity timer
     jal check_S                    
     # checks that piece can move down safely
     
