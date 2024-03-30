@@ -66,6 +66,7 @@ init_board:                             # draw a grid across the entire screen
         beq $t7, 0, draw_even_row
         beq $t7, 128, draw_odd_row
         
+
         j game_loop
         
 end_init_board:
@@ -208,14 +209,15 @@ cover_background:
     
 end_cover_background: 
 
-draw_new:                   # draws a new tetromino (rn just an i type by default)
+draw_new:                   # draws a new tetromino (rn just an i type by default)  
     lw $s0, ADDR_DSPL       # $s0 = curr anchor location
-    addi $s0, $s0, 800      # so it starts in the top middle of the grid
+    addi $s0, $s0, 800      # so it starts in the top middle of the gridf
     
     li $s1, 0               # $s1 = curr orientation
     li $s2, 0               # $s2 = curr shape
     
     jal i_type              # draws the new tetromino (how do u spell that man)
+    jal check_frozen
     j game_loop             # starts the main game loop once the first piece is drawn
 
 game_loop:                  # main game loop
@@ -273,7 +275,8 @@ respond_to_A:
     j game_loop                     # loop back once dealt with
 
 respond_to_S:  
-    jal check_S                     # checks that piece can move down safely
+    jal check_S                    
+    # checks that piece can move down safely
     
     li $a3, 128                     # pass in how much to shift
     jal i_type                      # move the tetromino down
@@ -302,8 +305,10 @@ check_frozen:
     check_frozen_vert:
         lw $t1, 512($s0)
         
-        beq $t1, 0x47f5cf, draw_new
-        beq $t1, 0xa6a6a6, draw_new
+        beq $t1, 0x47f5cf, check_completed_rows
+        beq $t1, 0xa6a6a6, check_completed_rows
+        
+        ## HERE INSTEAD OF DRAW NEW, DO A CHECK FOR FULL ROWS!! (MAYBE? IDK)
     
         jr $ra
         
@@ -314,8 +319,10 @@ check_frozen:
         
         fh_start:
             lw $t2, 0($t1) 
-            beq $t2, 0x47f5cf, draw_new
-            beq $t2, 0xa6a6a6, draw_new
+            beq $t2, 0x47f5cf, check_completed_rows
+            beq $t2, 0xa6a6a6, check_completed_rows
+            
+            # CHANGE BACK TO DRAW NEW ^^? IDK
             
             addi $t0, $t0, 1
             addi $t1, $t1, 4
@@ -323,6 +330,98 @@ check_frozen:
         blt $t0, 4, fh_start 
         jr $ra
         
+check_completed_rows:
+    li $t0, 0                       # row counter
+    li $t1, 0                       # column counter
+    
+    li $t8, 2                       # checks whether, after a piece has moved in some way, it is in a position where it should stop and a new one should load
+    div $s1, $t8    
+    mfhi $t7                        # remainder when curr orientation is divided by 2
+    
+    beq $t7, 0, check_complete_row_vert        # if remainder is 0, piece is vertical   
+    beq $t7, 1, check_complete_row_horz        # if remainder is 1, piece is horizontal 
+    
+    check_complete_row_vert:
+        li $t7, 0                               # counter for each pixel of the vertical block
+        add $a0, $s0, $0                        # put the anchor position in $a0
+        
+        check_complete_row_vert_loop:
+            jal check_row_complete
+            
+            addi $t7, $t7, 1
+            addi $a0, $a0, 128
+            
+            beq $t7, 4, draw_new
+            j check_complete_row_vert_loop
+    
+    check_complete_row_horz:
+        add $a0, $s0, $0
+        jal check_row_complete
+        j draw_new
+    
+    check_row_complete:
+        lw $t1, ADDR_DSPL                       # set $t1 to be the base address of the display
+        sub $t2, $a0, $t1                       # subtract the current address of the pixel being looked at from the base address and store in $t2
+        div $t2, $t2, 128                       # div by 128 to see what row we're on
+        sll $t2, $t2, 7                         # shift this value left by 7 i.e. multiply by 128 to get the beginning of the row
+        add $t2, $t2, $t1                       # add this back to the base address to get the starting pixel of the row and store in $t2
+        add $a1, $t2, $zero                     # also save this in $a1 to use later
+        
+        li $t0, 0                               # starting counter
+        
+        check_row_complete_loop:
+            lw $t1, 0($t2)                      # load the colour in $t2, the curr pixel, into $t1
+            beq $t1, 0x383838, exit_check_complete_row_loop        # if the colour is the first grid colour, the row isn't complete
+            beq $t1, 0x1c1c1c, exit_check_complete_row_loop        # if the colour is the second grid colour, the row isn't complete
+            
+            addi $t0, $t0, 1                    # add one to the current column counter
+            addi $t2, $t2, 4                    # go to the next pixel
+            
+            beq $t0, 14, shift_row_down         # if we've got to the end of the row and not broken out of the loop, the row is complete
+            
+            j check_row_complete_loop           # loop again
+
+        shift_row_down:             
+            add $t1, $a1, $zero                 # set $t1 as the first pixel of the row we're looking at
+            addi $t1, $t1, 128
+            
+            shift_row_down_loop:
+                lw $t2, ADDR_DSPL                       # set $t2 to be the base address of the display
+                sub $t3, $t1, $t2                       # get the difference between the current pixel and the base address
+                
+                lw $t4, -128($t1)                         # get colour from pixel above
+                 
+                beq $t4, 0x383838, paint_grid_colour_1
+                beq $t4, 0x1c1c1c, paint_grid_colour_2
+                beq $t4, 0x47f5cf, paint_grid_piece_colour
+                
+                shift_row_down_loop_restart:
+                
+                addi $t1, $t1, -4
+                
+                ble $t3, 128, exit_check_complete_row_loop          # if we're at the first row, stop
+                j shift_row_down_loop
+                
+            paint_grid_colour_1:
+                li $t5, 0x1c1c1c
+                sw $t5, 0($t1) 
+                j shift_row_down_loop_restart
+                
+            paint_grid_colour_2:
+                li $t5, 0x383838
+                sw $t5, 0($t1)  
+                j shift_row_down_loop_restart
+                
+            paint_grid_piece_colour:
+                li $t5, 0x47f5cf
+                sw $t5, 0($t1)  
+                j shift_row_down_loop_restart
+            
+        exit_check_complete_row_loop:
+            jr $ra
+            
+
+
 check_W:
     li $t8, 2                       # checks that piece can rotate safely
     div $s1, $t8    
@@ -335,7 +434,7 @@ check_W:
   
         li $t8, 0                           # counter for loop
     
-        addi $t7, $s0, 4                    # $t7 is the value the the right of the anchor position
+        addi $t7, $s0, 4                    # $t7 is the value the to the right of the anchor position
     
         check_colour_1_W_vert:
             lw $t9, 0($t7)                                  # current position
@@ -350,7 +449,7 @@ check_W:
             addi, $t8, $t8, 1               # increase counter
             addi $t7, $t7, 4                # increase current pixel being looked at
             
-            beq $t8, 4, check_pass          # check if all pixels have been checked
+            beq $t8, 3, check_pass          # check if all pixels have been checked
             
             j check_colour_1_W_vert         # if not all, loop back
         
@@ -597,6 +696,7 @@ erase_i:
         
         col_type_1:
             col_type_1_a:
+                # lw $t
                 beq $t0, 0x47f5cf, col_type_1_b
                 sw $t1, 0($t0)
                 addi $t0, $t0, 128
@@ -657,10 +757,10 @@ erase_i:
         j go_above_end
         
         go_above_start:
-            lw $t9, 16($s0)
+            lw $t9, -128($s0)
                 
-            beq $t9, 0x383838, row_type_1
-            beq $t9, 0x1c1c1c, row_type_2
+            beq $t9, 0x383838, row_type_2
+            beq $t9, 0x1c1c1c, row_type_1
             
         go_above_end:
         
