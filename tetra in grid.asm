@@ -434,7 +434,7 @@ check_W:
   
         li $t8, 0                           # counter for loop
     
-        addi $t7, $s0, 4                    # $t7 is the value the the right of the anchor position
+        addi $t7, $s0, 4                    # $t7 is the value the to the right of the anchor position
     
         check_colour_1_W_vert:
             lw $t9, 0($t7)                                  # current position
@@ -449,7 +449,7 @@ check_W:
             addi, $t8, $t8, 1               # increase counter
             addi $t7, $t7, 4                # increase current pixel being looked at
             
-            beq $t8, 4, check_pass          # check if all pixels have been checked
+            beq $t8, 3, check_pass          # check if all pixels have been checked
             
             j check_colour_1_W_vert         # if not all, loop back
         
@@ -757,10 +757,10 @@ erase_i:
         j go_above_end
         
         go_above_start:
-            lw $t9, 16($s0)
+            lw $t9, -128($s0)
                 
-            beq $t9, 0x383838, row_type_1
-            beq $t9, 0x1c1c1c, row_type_2
+            beq $t9, 0x383838, row_type_2
+            beq $t9, 0x1c1c1c, row_type_1
             
         go_above_end:
         
