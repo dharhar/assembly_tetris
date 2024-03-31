@@ -196,7 +196,7 @@ cover_background:
         # sw $t1, 0($t0)
     
     draw_right_sec:
-        beq $t2, 21, draw_sample 
+        beq $t2, 21, exit 
         li $t3, 0
         addi $t0, $t0, 56
         addi $t2, $t2, 1
@@ -211,10 +211,8 @@ cover_background:
         addi $t3, $t3, 1
         j draw_row_for_right_sec
         
+    
 end_cover_background: 
-        
-draw_sample:
-
         
 game_loop:
 	# 1a. Check if key has been pressed
