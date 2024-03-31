@@ -24,6 +24,9 @@ ADDR_KBRD:
 
 GRAVITY_TIME:
     .word 100
+    
+MUSIC_TIMER:
+    .word 19200
 
 ##############################################################################
 # Mutable Data
@@ -39,6 +42,7 @@ GRAVITY_TIME:
     
 main:                           # Initialize the game
     lw $s7, GRAVITY_TIME        # Load gravity timer
+    lw $s6, MUSIC_TIMER
     lw $t0, ADDR_DSPL           # $t0 = base address for display
 
     li $t1, 0x383838            # COLOR_GRID_ONE
@@ -401,32 +405,303 @@ draw_game_over_screen:
         sw $t2, 76($s0)
         
     draw_score:
+        # TODO
+    
         
-    
-        j respond_to_Q
-    
     draw_press_R_to_retry:
+        li $v0, 32
+        li $a0, 1
+        syscall
     
-    
+        lw $t9, ADDR_KBRD
+        lw $t8, 4($t9)
+        beq $t8, 0x72, main          # player presses r, retry 
+        beq $t8, 0x71, respond_to_Q
+        j draw_press_R_to_retry
 
 game_loop:                  # main game loop
-    li $v0, 32              # lowkey what do these do
-	li $a0, 1               # oh its keyboard things okay
+    jal play_korobeniki
+    subi $s6, $s6, 20
+    
 
-	syscall
+    li $v0, 32              # wait system call
+	li $a0, 1               # 1 millisecond argument
+
+	syscall	
 
     lw $t9, ADDR_KBRD               # $t0 = base address for keyboard
     lw $t8, 0($t9)                  # Load first word from keyboard
     beq $t8, 1, keyboard_input      # If first word 1, key is pressed
     
-    subi $s7, $s7, 1                # decrement gravity timer
-    # sw $s7, GRAVITY_TIME            # store updated timer value
     
+    subi $s7, $s7, 1                # decrement gravity timer
     beq $s7, 0, respond_to_S        # if gravity timer hits 0, move piece down
+    
     
     beq $t8, 0, game_loop           # while there's no new keyboard input, do nothing
     
-    j game_loop
+    # j game_loop
+
+play_korobeniki:
+    li $v0, 31
+    li $a2, 0                        # set instrument to piano
+    li $a3, 100                      # set constant volume
+    beq $s6, 19200, play_music_1      # first bar
+    beq $s6, 18600, play_music_2
+    beq $s6, 18300, play_music_3
+    beq $s6, 18000, play_music_4
+    beq $s6, 17400, play_music_5
+    beq $s6, 17100, play_music_6
+    
+    beq $s6, 16800, play_music_7      # second bar
+    beq $s6, 16200, play_music_8
+    beq $s6, 15900, play_music_9
+    beq $s6, 15600, play_music_10
+    beq $s6, 15000, play_music_11
+    beq $s6, 14700, play_music_12
+    
+    beq $s6, 14400, play_music_13        # third bar
+    beq $s6, 13500, play_music_14
+    beq $s6, 13200, play_music_15
+    beq $s6, 12600, play_music_16
+    
+    beq $s6, 12000, play_music_17           # fourth bar
+    beq $s6, 11400, play_music_18
+    beq $s6, 10800, play_music_19
+    # beq $s6, 10200, play_music_pause_one_beat         # dont need to call wait here, since we wait in game loop
+   
+    # beq $s6, 9600, play_music_pause_half_beat       # fifth bar
+    beq $s6, 9300, play_music_21            
+    beq $s6, 8700, play_music_22
+    beq $s6, 8400, play_music_23
+    beq $s6, 7800, play_music_24
+    beq $s6, 7500, play_music_25
+   
+    beq $s6, 7200, play_music_26                    # sixth bar
+    beq $s6, 6300, play_music_27
+    beq $s6, 6000, play_music_28
+    beq $s6, 5400, play_music_29
+    beq $s6, 5100, play_music_30
+    
+    beq $s6, 4800, play_music_13                    # seventh bar / same as third
+    beq $s6, 3900, play_music_14
+    beq $s6, 3600, play_music_15
+    beq $s6, 3000, play_music_16
+    
+    beq $s6, 2400, play_music_17                   # eighth bar / same as fourth 
+    beq $s6, 1800, play_music_18
+    beq $s6, 1200, play_music_19
+    beq $s6, 600, play_music_pause_one_beat_reset
+
+    jr $ra
+   
+    #################################
+    
+    play_music_pause_one_beat_reset:
+        li $v0, 32
+        li $a0, 600
+        syscall
+        li $s6, 19220
+        jr $ra
+    
+    # play_music_pause_one_beat:
+        # li $v0, 32
+        # li $a0, 600
+        # # syscall
+        # jr $ra
+        
+    # play_music_pause_half_beat:
+        # li $v0, 32
+        # li $a0, 300
+        # # syscall
+        # jr $ra
+    #################################
+    
+    play_music_26:
+        li $a0, 76         
+        li $a1, 900                   
+        syscall   
+        jr $ra
+        
+    play_music_27:
+        li $a0, 72               
+        li $a1, 300                   
+        syscall   
+        jr $ra
+        
+    play_music_28:
+        li $a0, 76           
+        li $a1, 600                   
+        syscall   
+        jr $ra
+        
+    play_music_29:
+        li $a0, 74                            
+        li $a1, 300                   
+        syscall   
+        jr $ra
+        
+    play_music_30:
+        li $a0, 72                    
+        li $a1, 300               # 77 is f                   
+        syscall   
+        jr $ra
+    
+    #################################
+    
+    play_music_21:
+        li $a0, 74                              
+        li $a1, 600                   
+        syscall   
+        jr $ra
+        
+    play_music_22:
+        li $a0, 77                 
+        li $a1, 300                   
+        syscall   
+        jr $ra
+        
+    play_music_23:
+        li $a0, 81               
+        li $a1, 600                   
+        syscall   
+        jr $ra
+        
+    play_music_24:
+        li $a0, 79                
+        li $a1, 300                   
+        syscall   
+        jr $ra
+        
+    play_music_25:
+        li $a0, 77                    
+        li $a1, 300                    
+        syscall   
+        jr $ra
+        
+    #################################
+    
+    play_music_17:
+        li $a0, 72                    
+        li $a1, 600                   
+        syscall   
+        jr $ra
+        
+    play_music_18:
+        li $a0, 69                    
+        li $a1, 600                   
+        syscall   
+        jr $ra
+        
+    play_music_19:
+        li $a0, 69                    
+        li $a1, 600                   
+        syscall   
+        jr $ra
+ 
+ ##################################
+ 
+    play_music_13:
+        li $a0, 71                    
+        li $a1, 900                   
+        syscall   
+        jr $ra
+ 
+    play_music_14:
+        li $a0, 72                    
+        li $a1, 300                   
+        syscall   
+        jr $ra
+    
+    play_music_15:
+        li $a0, 74                    
+        li $a1, 600                   
+        syscall   
+        jr $ra
+    
+    play_music_16:
+        li $a0, 76                    
+        li $a1, 600                   
+        syscall   
+        jr $ra
+ 
+ ############################
+ 
+    play_music_7:
+        li $a0, 69                    
+        li $a1, 600                   
+        syscall
+        jr $ra
+    
+    play_music_8:
+        li $a0, 69                    
+        li $a1, 300                   
+        syscall
+        jr $ra
+        
+    play_music_9:
+        li $a0, 72                    
+        li $a1, 300                   
+        syscall   
+        jr $ra
+ 
+    play_music_10:
+        li $a0, 76                    
+        li $a1, 600                   
+        syscall   
+        jr $ra
+ 
+    play_music_11:
+        li $a0, 74                    
+        li $a1, 300                   
+        syscall   
+        jr $ra
+ 
+    play_music_12:
+        li $a0, 72                    
+        li $a1, 300                   
+        syscall   
+        jr $ra
+ 
+ ####################################
+ 
+    play_music_1:
+        li $a0, 76                    # pitch is E1
+        li $a1, 600                   # duration is 600 ms
+        syscall
+        jr $ra
+        
+    play_music_2:
+        li $a0, 71                    
+        li $a1, 300                   
+        syscall
+        jr $ra
+        
+    play_music_3:
+        li $a0, 72                    
+        li $a1, 300                   
+        syscall
+        jr $ra
+        
+    play_music_4:
+        li $a0, 74                    
+        li $a1, 600                   
+        syscall
+        jr $ra
+        
+    play_music_5:
+        li $a0, 72                    
+        li $a1, 300                   
+        syscall
+        jr $ra
+        
+    play_music_6:
+        li $a0, 71                    
+        li $a1, 600                   
+        syscall
+        jr $ra
+        
+
 
 keyboard_input:                     # A key is pressed
     lw $a0, 4($t9)                  # Load second word from keyboard
