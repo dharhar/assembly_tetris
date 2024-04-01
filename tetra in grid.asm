@@ -382,6 +382,7 @@ check_completed_rows:
             j check_row_complete_loop           # loop again
 
         shift_row_down:             
+
             add $t1, $a1, $zero                 # set $t1 as the first pixel of the row we're looking at
             addi $t1, $t1, 128
             
@@ -400,6 +401,7 @@ check_completed_rows:
                 addi $t1, $t1, -4
                 
                 ble $t3, 128, exit_check_complete_row_loop          # if we're at the first row, stop
+
                 j shift_row_down_loop
                 
             paint_grid_colour_1:
