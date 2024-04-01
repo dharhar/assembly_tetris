@@ -228,7 +228,8 @@ cover_background:
         sw $t5, 1108($t6)
         sw $t5, 1232($t6)
         
-        li $t5, 0x47f5cf        # get teal colour
+        # li $t5, 0x47f5cf        # get teal colour
+        add $t5, $s4, $0
         sw $t5, 868($t6)
         sw $t5, 996($t6)
         sw $t5, 1124($t6)
@@ -655,9 +656,41 @@ draw_new:                   # draws a new tetromino (rn just an i type by defaul
     addi $s0, $s0, 800      # so it starts in the top middle of the grid
     li $s1, 0               # $s1 = curr orientation
     li $s2, 0               # $s2 = curr shape
+    li $s4, 0               # $s4 = colour??
+    
+    # random colour generator!!!!! cute
+    
+    li $v0, 42
+    li $a0, 0
+    li $a1, 5
+    syscall # after this , the return value is in $a0
+    
+    beq $a0, 0, colour_1
+    beq $a0, 1, colour_2
+    beq $a0, 2, colour_3
+    beq $a0, 3, colour_4
+    beq $a0, 4, colour_5
+    
+    colour_1:
+        li $s4, 0xEE92C2
+        j colour_end
+    colour_2:
+        li $s4, 0x6622CC
+        j colour_end
+    colour_3:
+        li $s4, 0xFA824C
+        j colour_end
+    colour_4:
+        li $s4, 0x52FFB8
+        j colour_end
+    colour_5:
+        li $s4, 0x66C7F4
+        j colour_end
+    colour_end:
     
     jal i_type              # draws the new tetromino (how do u spell that man)
     
+## second digit doesn't update after looping past 100?? check
 
 game_loop:                  # main game loop
     li $v0, 32              # lowkey what do these do
@@ -809,7 +842,7 @@ check_frozen:
     check_frozen_vert:
         lw $t1, 512($s0)
         
-        beq $t1, 0x47f5cf, draw_new
+        beq $t1, $s4, draw_new
         beq $t1, 0xa6a6a6, draw_new
     
         jr $ra
@@ -821,7 +854,7 @@ check_frozen:
         
         fh_start:
             lw $t2, 0($t1) 
-            beq $t2, 0x47f5cf, draw_new
+            beq $t2, $s4, draw_new
             beq $t2, 0xa6a6a6, draw_new
             
             addi $t0, $t0, 1
@@ -1035,7 +1068,8 @@ i_type:
     beq $t7, 1, i_horz
     
     i_vert:
-        li $t1, 0x47f5cf        # I-type: teal  
+        # li $t1, $s4        # I-type: teal  
+        add $t1, $s4, $0
         
         li $t0, 0               # set starting position as anchor
         add $t0, $t0, $s0
@@ -1051,7 +1085,8 @@ i_type:
         jr $ra
         
     i_horz:
-        li $t1, 0x47f5cf        # I-type: teal    
+        # li $t1, 0x47f5cf        # I-type: teal   
+        add $t1, $s4, $0
         
         li $t0, 0               # set starting position as anchor
         add $t0, $t0, $s0
@@ -1075,7 +1110,7 @@ erase_i:
     ## FREAKING THING JUST WENT INTO THE WALL! BRUH!!! FIX THIS :((((
     
     lw $t9, 4($s0)
-    beq $t9, 0x47f5cf, erase_i_horz         # check to see if last draw shape was h/v
+    beq $t9, $s4, erase_i_horz         # check to see if last draw shape was h/v
     beq $t9, 0x000000, erase_i_vert
     
     erase_i_vert:
@@ -1104,22 +1139,22 @@ erase_i:
         
         col_type_1:
             col_type_1_a:
-                beq $t0, 0x47f5cf, col_type_1_b
+                beq $t0, $s4, col_type_1_b
                 sw $t1, 0($t0)
                 addi $t0, $t0, 128
                 
             col_type_1_b:
-                beq $t0, 0x47f5cf, col_type_1_c
+                beq $t0, $s4, col_type_1_c
                 sw $t2, 0($t0)
                 addi $t0, $t0, 128
             
             col_type_1_c:
-                beq $t0, 0x47f5cf, col_type_1_d
+                beq $t0, $s4, col_type_1_d
                 sw $t1, 0($t0)
                 addi $t0, $t0, 128
                 
             col_type_1_d:
-                beq $t0, 0x47f5cf, col_type_1_end
+                beq $t0, $s4, col_type_1_end
                 sw $t2, 0($t0)
             
             col_type_1_end:
@@ -1128,22 +1163,22 @@ erase_i:
         col_type_2:
         
             col_type_2_a:
-                beq $t0, 0x47f5cf, col_type_2_b
+                beq $t0, $s4, col_type_2_b
                 sw $t2, 0($t0)
                 addi $t0, $t0, 128
                 
             col_type_2_b:
-                beq $t0, 0x47f5cf, col_type_2_c
+                beq $t0, $s4, col_type_2_c
                 sw $t1, 0($t0)
                 addi $t0, $t0, 128
                 
             col_type_2_c:
-                beq $t0, 0x47f5cf, col_type_2_d
+                beq $t0, $s4, col_type_2_d
                 sw $t2, 0($t0)
                 addi $t0, $t0, 128
                 
             col_type_2_d:
-                beq $t0, 0x47f5cf, col_type_2_end
+                beq $t0, $s4, col_type_2_end
                 sw $t1, 0($t0)
                 
             col_type_2_end:
@@ -1159,7 +1194,7 @@ erase_i:
         
         lw $t9, -4($s0)
         beq $t9, 0xa6a6a6, go_above_start
-        beq $t9, 0x47f5cf, go_above_start
+        beq $t9, $s4, go_above_start
         
         j go_above_end
         
@@ -1176,22 +1211,22 @@ erase_i:
         
         row_type_1:
             row_type_1_a:
-                beq $t0, 0x47f5cf, row_type_1_b
+                beq $t0, $s4, row_type_1_b
                 sw $t1, 0($t0)
                 addi $t0, $t0, 4
             
             row_type_1_b:
-                beq $t0, 0x47f5cf, row_type_1_c
+                beq $t0, $s4, row_type_1_c
                 sw $t2, 0($t0)
                 addi $t0, $t0, 4
                 
             row_type_1_c:
-                beq $t0, 0x47f5cf, row_type_1_d
+                beq $t0, $s4, row_type_1_d
                 sw $t1, 0($t0)
                 addi $t0, $t0, 4
             
             row_type_1_d:   
-                beq $t0, 0x47f5cf, row_type_1_end
+                beq $t0, $s4, row_type_1_end
                 sw $t2, 0($t0)
             
             row_type_1_end:
@@ -1199,22 +1234,22 @@ erase_i:
         
         row_type_2:
             row_type_2_a:  
-                beq $t0, 0x47f5cf, row_type_2_b
+                beq $t0, $s4, row_type_2_b
                 sw $t2, 0($t0)
                 addi $t0, $t0, 4
                 
             row_type_2_b:
-                beq $t0, 0x47f5cf, row_type_2_c   
+                beq $t0, $s4, row_type_2_c   
                 sw $t1, 0($t0)
                 addi $t0, $t0, 4
                 
             row_type_2_c:
-                beq $t0, 0x47f5cf, row_type_2_d
+                beq $t0, $s4, row_type_2_d
                 sw $t2, 0($t0)
                 addi $t0, $t0, 4
                 
             row_type_2_d:
-                beq $t0, 0x47f5cf, row_type_2_end
+                beq $t0, $s4, row_type_2_end
                 sw $t1, 0($t0)
                 
             row_type_2_end:
