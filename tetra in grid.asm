@@ -363,7 +363,7 @@ draw_game_over_screen:
     
     draw_game_over:
         lw $s0, ADDR_DSPL
-        addi $s0, $s0, 404              # move to the top left side of screen
+        addi $s0, $s0, 408              # move to the top left side of screen
         sw $t2, 4($s0)
         sw $t2, 8($s0)
         sw $t2, 12($s0)
@@ -544,7 +544,7 @@ draw_game_over_screen:
 
 game_loop:                  # main game loop
     jal play_korobeniki
-    subi $s6, $s6, 20
+    subi $s6, $s6, 15
     
 
     li $v0, 32              # wait system call
@@ -570,51 +570,80 @@ play_korobeniki:
     li $a2, 0                        # set instrument to piano
     li $a3, 100                      # set constant volume
     beq $s6, 19200, play_music_1      # first bar
+    beq $s6, 18900, play_music_E1
     beq $s6, 18600, play_music_2
     beq $s6, 18300, play_music_3
     beq $s6, 18000, play_music_4
+    beq $s6, 17700, play_music_E1
     beq $s6, 17400, play_music_5
     beq $s6, 17100, play_music_6
     
     beq $s6, 16800, play_music_7      # second bar
+    beq $s6, 16500, play_music_A1
     beq $s6, 16200, play_music_8
     beq $s6, 15900, play_music_9
     beq $s6, 15600, play_music_10
+    beq $s6, 15300, play_music_A1
     beq $s6, 15000, play_music_11
     beq $s6, 14700, play_music_12
     
     beq $s6, 14400, play_music_13        # third bar
+    beq $s6, 14100, play_music_B1
+    beq $s6, 13800, play_music_B0
     beq $s6, 13500, play_music_14
     beq $s6, 13200, play_music_15
+    beq $s6, 12900, play_music_B1
     beq $s6, 12600, play_music_16
+    beq $s6, 12300, play_music_B1
     
     beq $s6, 12000, play_music_17           # fourth bar
+    beq $s6, 11700, play_music_A1
     beq $s6, 11400, play_music_18
+    beq $s6, 11100, play_music_A1
     beq $s6, 10800, play_music_19
+    beq $s6, 10500, play_music_A1
+    beq $s6, 10200, play_music_A0 
+    beq $s6, 9900, play_music_A1
+     
     
     # play rest notes in game loop (10800 - 9300 = 1500 rest here -> one and a half beats)
     
-    beq $s6, 9300, play_music_21            
+    beq $s6, 9600, play_music_D0
+    beq $s6, 9300, play_music_21
+    beq $s6, 9000, play_music_D0
     beq $s6, 8700, play_music_22
     beq $s6, 8400, play_music_23
+    beq $s6, 8100, play_music_D1
     beq $s6, 7800, play_music_24
     beq $s6, 7500, play_music_25
    
     beq $s6, 7200, play_music_26                    # sixth bar
+    beq $s6, 6900, play_music_C1
+    beq $s6, 6600, play_music_C0
     beq $s6, 6300, play_music_27
     beq $s6, 6000, play_music_28
+    beq $s6, 5700, play_music_C1
     beq $s6, 5400, play_music_29
     beq $s6, 5100, play_music_30
     
     beq $s6, 4800, play_music_13                    # seventh bar / same as third
+    beq $s6, 4500, play_music_B1
+    beq $s6, 4200, play_music_B0
     beq $s6, 3900, play_music_14
     beq $s6, 3600, play_music_15
+    beq $s6, 3300, play_music_B1
     beq $s6, 3000, play_music_16
+    beq $s6, 2700, play_music_B1
     
-    beq $s6, 2400, play_music_17                   # eighth bar / same as fourth 
+    beq $s6, 2400, play_music_17                   # eighth bar / same as fourth \
+    beq $s6, 2100, play_music_A1
     beq $s6, 1800, play_music_18
+    beq $s6, 1500, play_music_A1
     beq $s6, 1200, play_music_19
-    beq $s6, 600, play_music_pause_one_beat_reset
+    beq $s6, 900, play_music_A1
+    beq $s6, 600, play_music_A0
+    beq $s6, 300, play_music_A1
+    beq $s6, 0, play_music_pause_one_beat_reset
 
     jr $ra
    
@@ -623,9 +652,72 @@ play_korobeniki:
     play_music_pause_one_beat_reset:
         li $v0, 32
         li $a0, 600
-        syscall
-        li $s6, 19220 # set to 19220 because game loop decremenets by 20 after returning
+        # syscall
+        li $s6, 19215 # set to 19220 because game loop decremenets by 20 after returning
         jr $ra
+    
+    #################################
+    
+    play_music_E0:
+        li $a0, 52               
+        li $a1, 300                   
+        syscall   
+        jr $ra
+    
+    play_music_E1:
+        li $a0, 64               
+        li $a1, 300                   
+        syscall   
+        jr $ra
+    
+    play_music_A0:
+        li $a0, 45               
+        li $a1, 300                   
+        syscall   
+        jr $ra
+    
+    play_music_A1:
+        li $a0, 57               
+        li $a1, 300                   
+        syscall   
+        jr $ra
+    
+    play_music_B0:
+        li $a0, 47               
+        li $a1, 300                   
+        syscall   
+        jr $ra
+    
+    play_music_B1:
+        li $a0, 59               
+        li $a1, 300                   
+        syscall   
+        jr $ra
+    
+    play_music_D0:
+        li $a0, 50               
+        li $a1, 300                   
+        syscall   
+        jr $ra
+    
+    play_music_D1:
+        li $a0, 62               
+        li $a1, 300                   
+        syscall   
+        jr $ra
+    
+    play_music_C0:
+        li $a0, 48               
+        li $a1, 300                   
+        syscall   
+        jr $ra
+    
+    play_music_C1:
+        li $a0, 60               
+        li $a1, 300                   
+        syscall   
+        jr $ra
+    
     
     #################################
     
@@ -633,30 +725,45 @@ play_korobeniki:
         li $a0, 76         
         li $a1, 900                   
         syscall   
+        li $a0, 48               
+        li $a1, 300                   
+        syscall
         jr $ra
         
     play_music_27:
         li $a0, 72               
         li $a1, 300                   
         syscall   
+        li $a0, 60               
+        li $a1, 300                   
+        syscall
         jr $ra
         
     play_music_28:
         li $a0, 76           
         li $a1, 600                   
-        syscall   
+        syscall  
+        li $a0, 48               
+        li $a1, 300                   
+        syscall
         jr $ra
         
     play_music_29:
         li $a0, 74                            
         li $a1, 300                   
-        syscall   
+        syscall  
+        li $a0, 48               
+        li $a1, 300                   
+        syscall
         jr $ra
         
     play_music_30:
         li $a0, 72                    
         li $a1, 300               # 77 is f                   
         syscall   
+        li $a0, 60               
+        li $a1, 300                   
+        syscall
         jr $ra
     
     #################################
@@ -665,30 +772,45 @@ play_korobeniki:
         li $a0, 74                              
         li $a1, 600                   
         syscall   
+        li $a0, 62               
+        li $a1, 300                   
+        syscall
         jr $ra
         
     play_music_22:
         li $a0, 77                 
         li $a1, 300                   
         syscall   
+        li $a0, 62               
+        li $a1, 300                   
+        syscall
         jr $ra
         
     play_music_23:
         li $a0, 81               
         li $a1, 600                   
         syscall   
+        li $a0, 50               
+        li $a1, 300                   
+        syscall
         jr $ra
         
     play_music_24:
         li $a0, 79                
         li $a1, 300                   
         syscall   
+        li $a0, 50               
+        li $a1, 300                   
+        syscall
         jr $ra
         
     play_music_25:
         li $a0, 77                    
         li $a1, 300                    
         syscall   
+        li $a0, 62               
+        li $a1, 300                   
+        syscall
         jr $ra
         
     #################################
@@ -697,18 +819,27 @@ play_korobeniki:
         li $a0, 72                    
         li $a1, 600                   
         syscall   
+        li $a0, 45               
+        li $a1, 300                   
+        syscall  
         jr $ra
         
     play_music_18:
         li $a0, 69                    
         li $a1, 600                   
         syscall   
+        li $a0, 45               
+        li $a1, 300                   
+        syscall  
         jr $ra
         
     play_music_19:
         li $a0, 69                    
         li $a1, 600                   
         syscall   
+        li $a0, 45               
+        li $a1, 300                   
+        syscall  
         jr $ra
  
  ##################################
@@ -717,24 +848,36 @@ play_korobeniki:
         li $a0, 71                    
         li $a1, 900                   
         syscall   
+        li $a0, 47               
+        li $a1, 300                   
+        syscall
         jr $ra
  
     play_music_14:
         li $a0, 72                    
         li $a1, 300                   
         syscall   
+        li $a0, 59               
+        li $a1, 300                   
+        syscall
         jr $ra
     
     play_music_15:
         li $a0, 74                    
         li $a1, 600                   
         syscall   
+        li $a0, 47               
+        li $a1, 300                   
+        syscall
         jr $ra
     
     play_music_16:
         li $a0, 76                    
         li $a1, 600                   
         syscall   
+        li $a0, 47               
+        li $a1, 300                   
+        syscall
         jr $ra
  
  ############################
@@ -743,10 +886,16 @@ play_korobeniki:
         li $a0, 69                    
         li $a1, 600                   
         syscall
+        li $a0, 45               
+        li $a1, 300                   
+        syscall
         jr $ra
     
     play_music_8:
         li $a0, 69                    
+        li $a1, 300                   
+        syscall
+        li $a0, 45               
         li $a1, 300                   
         syscall
         jr $ra
@@ -755,24 +904,36 @@ play_korobeniki:
         li $a0, 72                    
         li $a1, 300                   
         syscall   
+        li $a0, 57               
+        li $a1, 300                   
+        syscall
         jr $ra
  
     play_music_10:
         li $a0, 76                    
         li $a1, 600                   
         syscall   
+        li $a0, 45               
+        li $a1, 300                   
+        syscall
         jr $ra
  
     play_music_11:
         li $a0, 74                    
         li $a1, 300                   
         syscall   
+        li $a0, 45               
+        li $a1, 300                   
+        syscall
         jr $ra
  
     play_music_12:
         li $a0, 72                    
         li $a1, 300                   
         syscall   
+        li $a0, 57               
+        li $a1, 300                   
+        syscall
         jr $ra
  
  ####################################
@@ -781,30 +942,45 @@ play_korobeniki:
         li $a0, 76                    # pitch is E1
         li $a1, 600                   # duration is 600 ms
         syscall
+        li $a0, 52               
+        li $a1, 300                   
+        syscall   
         jr $ra
         
     play_music_2:
         li $a0, 71                    
         li $a1, 300                   
         syscall
+        li $a0, 52               
+        li $a1, 300                   
+        syscall   
         jr $ra
         
     play_music_3:
         li $a0, 72                    
         li $a1, 300                   
         syscall
+        li $a0, 64               
+        li $a1, 300                   
+        syscall   
         jr $ra
         
     play_music_4:
         li $a0, 74                    
         li $a1, 600                   
         syscall
+        li $a0, 52               
+        li $a1, 300                   
+        syscall   
         jr $ra
         
     play_music_5:
         li $a0, 72                    
         li $a1, 300                   
         syscall
+        li $a0, 52               
+        li $a1, 300                   
+        syscall   
         jr $ra
         
     play_music_6:
@@ -893,6 +1069,15 @@ respond_to_Q:
 	
 respond_to_W:
     jal check_W
+    
+    li $v0, 31                      # MIDI out
+    li $a0, 60                      # pitch
+    li $a1, 300                     # duration
+    li $a2, 115                     # instrument
+    li $a3, 127                     # volume (max)
+    
+    syscall
+    
 
     addi $s1, $s1, 1                # increment variable that stores rotation
     addi $v0, $s1, 0                # sets "new key pressed" to zero again
@@ -907,6 +1092,15 @@ respond_to_W:
 respond_to_A:
     jal check_A                     # checks that piece can move left safely
 
+    
+    li $v0, 31                      # MIDI out
+    li $a0, 60                      # pitch
+    li $a1, 300                     # duration
+    li $a2, 115                     # instrument
+    li $a3, 127                     # volume (max)
+    
+    syscall
+
     li $a3, -4                      # pass in how much to shift
     jal i_type                      # move the tetromino left
   
@@ -918,6 +1112,15 @@ respond_to_S:
     jal check_S                    
     # checks that piece can move down safely
     
+    
+    li $v0, 31                      # MIDI out
+    li $a0, 100                      # pitch
+    li $a1, 300                     # duration
+    li $a2, 115                     # instrument
+    li $a3, 127                     # volume (max)
+    
+    syscall
+    
     li $a3, 128                     # pass in how much to shift
     jal i_type                      # move the tetromino down
 
@@ -926,6 +1129,14 @@ respond_to_S:
 
 respond_to_D:                       # move the tetromino right
     jal check_D                     # checks that piece can move right safely
+    
+    li $v0, 31                      # MIDI out
+    li $a0, 60                      # pitch
+    li $a1, 300                     # duration
+    li $a2, 115                     # instrument
+    li $a3, 127                     # volume (max)
+    
+    syscall
     
     li $a3, 4                       # pass in how much to shift
     jal i_type
