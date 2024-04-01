@@ -258,14 +258,136 @@ draw_score_label:
         sw $t5, 2132($t0)
         sw $t5, 2140($t0)
         
-        j draw_score
+        j draw_new
         
 draw_score:
-    jal draw_9
-    j draw_new
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+    
+    jal erase_score
+    
+    div $t0, $s3, 10 
+    
+    li $v0, 0
+    
+    beq $t0, 1, go_to_draw_1
+    beq $t0, 2, go_to_draw_2
+    beq $t0, 3, go_to_draw_3
+    beq $t0, 4, go_to_draw_4
+    beq $t0, 5, go_to_draw_5
+    beq $t0, 6, go_to_draw_6
+    beq $t0, 7, go_to_draw_7
+    beq $t0, 8, go_to_draw_8
+    beq $t0, 9, go_to_draw_9
+    j go_to_draw_0
+    
+    digit_2:
+        mfhi $t1 
+        
+        li $v0, 1
+        
+        beq $t1, 0, go_to_draw_0
+        beq $t1, 1, go_to_draw_1
+        beq $t1, 2, go_to_draw_2
+        beq $t1, 3, go_to_draw_3
+        beq $t1, 4, go_to_draw_4
+        beq $t1, 5, go_to_draw_5
+        beq $t1, 6, go_to_draw_6
+        beq $t1, 7, go_to_draw_7
+        beq $t1, 8, go_to_draw_8
+        beq $t1, 9, go_to_draw_9    
+    
+    go_to_draw_0:
+        
+        jal draw_0
+        j go_to_end
+    go_to_draw_1:
+
+        jal draw_1
+        j go_to_end
+    go_to_draw_2:
+
+        jal draw_2
+        j go_to_end
+    go_to_draw_3:
+
+        jal draw_3
+        j go_to_end
+    go_to_draw_4:
+
+        jal draw_4
+        j go_to_end
+    go_to_draw_5:
+
+        jal draw_5
+        j go_to_end
+    go_to_draw_6:
+
+        jal draw_6
+        j go_to_end
+    go_to_draw_7:
+
+        jal draw_7
+        j go_to_end
+    go_to_draw_8:
+
+        jal draw_8
+        j go_to_end
+    go_to_draw_9:
+
+        jal draw_9
+        j go_to_end
+    go_to_end:
+        beq $v0, 0, digit_2
+    
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    
+    jr $ra
+    
+erase_score:
+    lw $t0, ADDR_DSPL
+    li $t5, 0x000000
+    
+    li $t1, 0 # row counter!
+    li $t2, 0 # column counter!
+    
+    addi $t0, $t0, 2752
+    
+    erase_score_loop_start:
+        sw $t5, 0($t0)
+        addi $t0, $t0, 4 # shift pixel right
+        addi $t2, $t2, 1 # shift col counter up one
+        
+        beq $t2, 11, up_row_counter_start
+        
+        j up_row_counter_end
+        
+        up_row_counter_start:
+            subi $t0, $t0, 44
+            addi $t1, $t1, 1
+            addi $t0, $t0, 128
+            li $t2, 0
+            
+            beq $t1, 6, erase_score_loop_end
+            
+        up_row_counter_end:
+        
+        j erase_score_loop_start
+        
+    erase_score_loop_end:
+    
+    jr $ra
     
 draw_0:
     lw $t0, ADDR_DSPL
+    beq $v0, 1, shift_num_start_0
+    j shift_num_end_0
+    
+    shift_num_start_0:
+        addi $t0, $t0, 20  ## shifts the number perfectly!!! slay
+    shift_num_end_0:
+    
     li $t5, 0xffffff
     
     sw $t5, 2764($t0)
@@ -287,6 +409,12 @@ draw_0:
     
 draw_1:
     lw $t0, ADDR_DSPL
+    beq $v0, 1, shift_num_start_1
+    j shift_num_end_1
+    
+    shift_num_start_1:
+        addi $t0, $t0, 20  ## shifts the number perfectly!!! slay
+    shift_num_end_1:
     li $t5, 0xffffff
     
     sw $t5, 2764($t0)
@@ -303,6 +431,12 @@ draw_1:
     
 draw_2:
     lw $t0, ADDR_DSPL
+     beq $v0, 1, shift_num_start_2
+    j shift_num_end_2
+    
+    shift_num_start_2:
+        addi $t0, $t0, 20  ## shifts the number perfectly!!! slay
+    shift_num_end_2:
     li $t5, 0xffffff
     
     sw $t5, 2764($t0)
@@ -321,6 +455,12 @@ draw_2:
     
 draw_3:
     lw $t0, ADDR_DSPL
+    beq $v0, 1, shift_num_start_3
+    j shift_num_end_3
+    
+    shift_num_start_3:
+        addi $t0, $t0, 20  ## shifts the number perfectly!!! slay
+    shift_num_end_3:
     li $t5, 0xffffff
     
     sw $t5, 2764($t0)
@@ -329,14 +469,21 @@ draw_3:
     sw $t5, 2896($t0)
     sw $t5, 3020($t0)
     sw $t5, 3152($t0)
-    sw $t5, 3276($t0)
-    sw $t5, 3272($t0)
-    sw $t5, 3140($t0)
+    sw $t5, 3404($t0)
+    sw $t5, 3400($t0)
+    sw $t5, 3268($t0)
+    sw $t5, 3280($t0)
     
     jr $ra
     
 draw_4:
     lw $t0, ADDR_DSPL
+    beq $v0, 1, shift_num_start_4
+    j shift_num_end_4
+    
+    shift_num_start_4:
+        addi $t0, $t0, 20  ## shifts the number perfectly!!! slay
+    shift_num_end_4:
     li $t5, 0xffffff
     
     sw $t5, 2768($t0)
@@ -357,6 +504,12 @@ draw_4:
     
 draw_5:
     lw $t0, ADDR_DSPL
+    beq $v0, 1, shift_num_start_5
+    j shift_num_end_5
+    
+    shift_num_start_5:
+        addi $t0, $t0, 20  ## shifts the number perfectly!!! slay
+    shift_num_end_5:
     li $t5, 0xffffff
     
     sw $t5, 2768($t0)
@@ -376,6 +529,12 @@ draw_5:
     
 draw_6:
     lw $t0, ADDR_DSPL
+    beq $v0, 1, shift_num_start_6
+    j shift_num_end_6
+    
+    shift_num_start_6:
+        addi $t0, $t0, 20  ## shifts the number perfectly!!! slay
+    shift_num_end_6:
     li $t5, 0xffffff
     
     sw $t5, 2768($t0)
@@ -396,6 +555,12 @@ draw_6:
     
 draw_7:
     lw $t0, ADDR_DSPL
+    beq $v0, 1, shift_num_start_7
+    j shift_num_end_7
+    
+    shift_num_start_7:
+        addi $t0, $t0, 20  ## shifts the number perfectly!!! slay
+    shift_num_end_7:
     li $t5, 0xffffff
     
     sw $t5, 2768($t0)
@@ -413,6 +578,12 @@ draw_7:
     
 draw_8:
     lw $t0, ADDR_DSPL
+    beq $v0, 1, shift_num_start_8
+    j shift_num_end_8
+    
+    shift_num_start_8:
+        addi $t0, $t0, 20  ## shifts the number perfectly!!! slay
+    shift_num_end_8:
     li $t5, 0xffffff
     
     sw $t5, 2764($t0)
@@ -432,6 +603,12 @@ draw_8:
     
 draw_9:
     lw $t0, ADDR_DSPL
+    beq $v0, 1, shift_num_start_9
+    j shift_num_end_9
+    
+    shift_num_start_9:
+        addi $t0, $t0, 20  ## shifts the number perfectly!!! slay
+    shift_num_end_9:
     li $t5, 0xffffff
     
     sw $t5, 2764($t0)
@@ -451,16 +628,36 @@ draw_9:
         
 end_cover_background: 
 
+li $s3, 0
+
+j draw_new
+
+update_score:
+    addi $sp, $sp, -4
+    sw $ra, 0($sp)
+  
+    jal erase_score
+    jal draw_score
+    
+    lw $ra, 0($sp)
+    addi $sp, $sp, 4
+    
+    jr $ra
 
 draw_new:                   # draws a new tetromino (rn just an i type by default)
+
+    ## FOR TESTING!! DELETE LATER!!
+    addi $s3, $s3, 1
+    jal update_score
+    ## FOR TESTING!!
+
     lw $s0, ADDR_DSPL       # $s0 = curr anchor location
     addi $s0, $s0, 800      # so it starts in the top middle of the grid
-    
     li $s1, 0               # $s1 = curr orientation
     li $s2, 0               # $s2 = curr shape
     
     jal i_type              # draws the new tetromino (how do u spell that man)
-    j game_loop             # starts the main game loop once the first piece is drawn
+    
 
 game_loop:                  # main game loop
     li $v0, 32              # lowkey what do these do
