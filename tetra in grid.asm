@@ -27,6 +27,9 @@ GRAVITY_TIME:
     
 MUSIC_TIMER:
     .word 19200
+    
+GAME_OVER_MUSIC_TIMER:
+    .word 4820
 
 ##############################################################################
 # Mutable Data
@@ -41,6 +44,7 @@ MUSIC_TIMER:
 	# Run the Tetris game.
     
 main:                           # Initialize the game
+    li $a3, 0
     lw $s7, GRAVITY_TIME        # Load gravity timer
     lw $s6, MUSIC_TIMER
     lw $t0, ADDR_DSPL           # $t0 = base address for display
@@ -234,15 +238,101 @@ draw_new:                   # draws a new tetromino (rn just an i type by defaul
 game_over:
     li $v0, 32
     li $a0, 500            # wait for a bit
+    lw $s5, GAME_OVER_MUSIC_TIMER
     syscall 
     
-    jal draw_game_over_screen
+    jal play_game_over
+    # j draw_game_over_screen
+    
+
+play_game_over:
+    subi $s5, $s5, 20
+    
+    li $v0, 32
+    li $a0, 1
+    syscall
+    
+    li $v0, 31
+    li $a1, 600                      # all notes same length
+    li $a2, 0                        # set instrument to piano
+    li $a3, 100
+    
+    beq $s5, 4800, play_game_over_1
+    beq $s5, 4200, play_game_over_2
+    beq $s5, 3600, play_game_over_3
+    beq $s5, 3000, play_game_over_4
+    beq $s5, 2400, play_game_over_5
+    beq $s5, 1800, play_game_over_6
+    beq $s5, 1200, play_game_over_7
+    
+    j play_game_over
+    
+    play_game_over_1:
+        li $a0, 81            
+        syscall   
+        li $a0, 64
+        syscall
+        li $a0, 60
+        syscall
+        li $a0, 53
+        j play_game_over
+        
+    play_game_over_2:
+        li $a0, 72                            
+        syscall   
+        j play_game_over
+    
+    play_game_over_3:
+        li $a0, 75                            
+        syscall   
+        li $a0, 65
+        syscall
+        li $a0, 62
+        syscall
+        li $a0, 55
+        syscall
+        j play_game_over
+    
+    play_game_over_4:
+        li $a0, 74         
+        syscall
+        j play_game_over
+        
+    play_game_over_5:
+        li $a0, 72                            
+        syscall
+        li $a0, 48
+        syscall
+        j play_game_over
+    
+    play_game_over_6:
+        li $a0, 69                        
+        syscall   
+        j play_game_over
+    
+    play_game_over_7:
+        li $a0, 72         
+        syscall
+        li $a0, 69
+        syscall
+        li $a0, 64
+        syscall
+        li $a0, 59
+        syscall
+        li $a0, 55
+        syscall
+        li $a0, 48
+        syscall
+        # li $s5, 4820 # set to 1220 because game loop decremenets by 20 after returning
+        j draw_game_over_screen
     
 draw_game_over_screen:
+    
     li $t0, 0
     li $t1, 0x000000
     li $t2, 0xffffff
     lw $s0, ADDR_DSPL
+    li $v0, 32
     li $a0, 1
     j draw_black_bg
 
@@ -405,7 +495,40 @@ draw_game_over_screen:
         sw $t2, 76($s0)
         
     draw_score:
-        # TODO
+        addi $s0, $s0, 768
+        sw $t2, 4($s0)              # draw the R
+        sw $t2, 8($s0)
+        sw $t2, 12($s0)
+        sw $t2, 128($s0)
+        sw $t2, 144($s0)
+        sw $t2, 256($s0)
+        sw $t2, 260($s0)
+        sw $t2, 264($s0)
+        sw $t2, 268($s0)
+        sw $t2, 384($s0)
+        sw $t2, 392($s0)
+        sw $t2, 512($s0)
+        sw $t2, 524($s0)
+        sw $t2, 640($s0)
+        sw $t2, 656($s0)
+        
+        addi $s0, $s0, 60           # draw the Q
+        sw $t2, 4($s0)
+        sw $t2, 8($s0)
+        sw $t2, 12($s0)
+        sw $t2, 128($s0)
+        sw $t2, 144($s0)
+        sw $t2, 256($s0)
+        sw $t2, 272($s0)
+        sw $t2, 384($s0)
+        sw $t2, 392($s0)
+        sw $t2, 400($s0)
+        sw $t2, 512($s0)
+        sw $t2, 524($s0)
+        sw $t2, 644($s0)
+        sw $t2, 648($s0)
+        sw $t2, 656($s0)
+        
     
         
     draw_press_R_to_retry:
@@ -415,8 +538,8 @@ draw_game_over_screen:
     
         lw $t9, ADDR_KBRD
         lw $t8, 4($t9)
-        beq $t8, 0x72, main          # player presses r, retry 
-        beq $t8, 0x71, respond_to_Q
+        beq $t8, 0x72, main                 # player presses r, retry 
+        beq $t8, 0x71, respond_to_Q         # player presses q, quit
         j draw_press_R_to_retry
 
 game_loop:                  # main game loop
@@ -468,9 +591,9 @@ play_korobeniki:
     beq $s6, 12000, play_music_17           # fourth bar
     beq $s6, 11400, play_music_18
     beq $s6, 10800, play_music_19
-    # beq $s6, 10200, play_music_pause_one_beat         # dont need to call wait here, since we wait in game loop
-   
-    # beq $s6, 9600, play_music_pause_half_beat       # fifth bar
+    
+    # play rest notes in game loop (10800 - 9300 = 1500 rest here -> one and a half beats)
+    
     beq $s6, 9300, play_music_21            
     beq $s6, 8700, play_music_22
     beq $s6, 8400, play_music_23
@@ -501,20 +624,9 @@ play_korobeniki:
         li $v0, 32
         li $a0, 600
         syscall
-        li $s6, 19220
+        li $s6, 19220 # set to 19220 because game loop decremenets by 20 after returning
         jr $ra
     
-    # play_music_pause_one_beat:
-        # li $v0, 32
-        # li $a0, 600
-        # # syscall
-        # jr $ra
-        
-    # play_music_pause_half_beat:
-        # li $v0, 32
-        # li $a0, 300
-        # # syscall
-        # jr $ra
     #################################
     
     play_music_26:
